@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_register"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".User.RegisterPage.registerActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/colorPrimary"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="6"
+            android:background="@color/colorPrimary"
+            android:gravity="center"
+            android:text="Register Here"
+            android:textSize="10pt" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_margin="30dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <EditText
+                android:id="@+id/idTextOnRegisterActivityTag"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginBottom="20dp"
+                android:layout_weight="1"
+                android:background="#FFFFFF"
+                android:drawableLeft="@drawable/ic_person_black_24dp"
+                android:hint="ID"
+                android:inputType="textVisiblePassword"
+                android:padding="10dp" />
+
+            <EditText
+                android:id="@+id/passwordTextOnRegisterActivityTag"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginBottom="20dp"
+                android:layout_weight="1"
+                android:background="#FFFFFF"
+                android:drawableLeft="@drawable/ic_https_black_24dp"
+                android:hint="Password"
+                android:inputType="textPassword"
+                android:padding="10dp" />
+
+            <EditText
+                android:id="@+id/phoneTextTag"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginBottom="20dp"
+                android:layout_weight="1"
+                android:background="#FFFFFF"
+                android:drawableLeft="@drawable/ic_phone_android_black_24dp"
+                android:hint="Phone Number"
+                android:inputType="phone"
+                android:padding="10dp" />
+
+            <RadioGroup
+                android:id="@+id/typeRadioGroupTag"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginBottom="20dp"
+                android:layout_weight="1"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:id="@+id/userRadioButtonTag"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:checked="true"
+                    android:gravity="center"
+                    android:text="user" />
+
+                <RadioButton
+                    android:id="@+id/bossRadioButtonTag"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="boss" />
+
+            </RadioGroup>
+
+            <Button
+                android:id="@+id/registerButtonOnRegisterActivityTag"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_margin="15dp"
+                android:layout_weight="1"
+                android:background="@color/colorPrimaryDark"
+                android:text="Register"
+                android:textSize="10pt" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+</RelativeLayout>

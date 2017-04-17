@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_weight="1"
+        android:padding="5dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/itemNameOnBossItemListviewRowTag"
+            android:text="Americano"
+            android:gravity="center_vertical"
+            android:textSize="10pt"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="2"/>
+
+        <TextView
+            android:id="@+id/itemInformationTextOnBossItemListviewRowTag"
+            android:text="여기는 인포메이션이 쓰여질 곳입니다 한글로 주로 쓰여지기 때문에 지금 한글로 쓰고 있구요 영어로 쓰는건 아닌 것 같음"
+            android:paddingTop="5dp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"/>
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/itemPriceOnBossItemListviewRowTag"
+        android:text="16,500"
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_weight="5"/>
+
+</LinearLayout>

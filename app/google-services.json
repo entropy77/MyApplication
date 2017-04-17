@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "920218395226",
+    "firebase_url": "https://jeogiyo-fff0b.firebaseio.com",
+    "project_id": "jeogiyo-fff0b",
+    "storage_bucket": "jeogiyo-fff0b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:920218395226:android:0ed5418302102bf6",
+        "android_client_info": {
+          "package_name": "com.example.mkseo.myapplication"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "920218395226-5ek0mik3tm070khol27o9676cb2ggjdm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDQIjl-QJaZB22kIwhvtQhryRxjvsgxnGQ"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

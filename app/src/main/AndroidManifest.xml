@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.mkseo.myapplication">
+
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="저기요"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme.NoActionBar">
+        <activity
+            android:name=".LoginPage.splashPage.splashActivity"
+            android:label="저기요">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service android:name=".FirebaseMessagingService">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <service android:name=".FirebaseInstanceIDService">
+            <intent-filter>
+                <action android:name="com.google.firebase.INSTANCE_ID_EVNET" />
+            </intent-filter>
+        </service>
+
+        <activity android:name=".User.QRcodeScanPage.qrScanActivity" />
+        <activity android:name=".User.PayingPage.payingActivity" />
+        <activity android:name=".User.PayingCompletePage.payingCompleteActivity" />
+        <activity android:name=".User.userMainActivity" />
+        <activity android:name=".User.RegisterPage.registerActivity" />
+        <activity android:name=".LoginPage.loginActivity" />
+        <activity android:name=".Boss.bossMainActivity" />
+        <activity android:name=".Boss.Fragments.itemListFragmentPage.itemAddPage.itemAddActivity"></activity>
+    </application>
+
+</manifest>
