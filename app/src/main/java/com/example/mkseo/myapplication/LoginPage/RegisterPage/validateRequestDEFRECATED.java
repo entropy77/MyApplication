@@ -1,4 +1,4 @@
-package com.example.mkseo.myapplication.User.RegisterPage;
+package com.example.mkseo.myapplication.LoginPage.RegisterPage;
 
 import com.android.volley.Response;
 import com.android.volley.toolbox.StringRequest;

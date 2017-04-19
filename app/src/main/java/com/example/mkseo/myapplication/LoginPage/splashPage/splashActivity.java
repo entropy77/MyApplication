@@ -2,17 +2,12 @@ package com.example.mkseo.myapplication.LoginPage.splashPage;
 
 import android.Manifest;
 import android.app.Dialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
-import android.hardware.Camera;
 import android.os.Build;
 import android.os.Handler;
 import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -25,9 +20,6 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.Volley;
 import com.example.mkseo.myapplication.LoginPage.loginActivity;
 import com.example.mkseo.myapplication.R;
-import com.example.mkseo.myapplication.User.QRcodeScanPage.qrScanActivity;
-import com.example.mkseo.myapplication.User.userMainActivity;
-import com.example.mkseo.myapplication.Boss.bossMainActivity;
 import com.example.mkseo.myapplication.loading_dialog;
 
 import org.json.JSONObject;
@@ -36,12 +28,11 @@ public class splashActivity extends AppCompatActivity {
 
     final int MY_PERMISSION_REQUEST_CODE = 100;
 
+    final String TAG = this.getClass().getSimpleName();
+
     private final int SPLASH_DISPLAY_LENGTH = 2000; // 2 sec
     private loading_dialog loading_dialog;
     private Dialog dialog;
-
-    // for killed by other activity
-    static splashActivity splashActivity;
 
     // good response
     protected Response.Listener<String> getResponseListener() {
@@ -49,6 +40,7 @@ public class splashActivity extends AppCompatActivity {
             @Override
             public void onResponse(String response) {
                 try {
+                    Log.d(TAG, "connection check - success");
                     reactor(response);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -73,8 +65,25 @@ public class splashActivity extends AppCompatActivity {
                 // if request had been proved
                 // go to login activity
                 // we do ask camera permission request
-                if (requestCameraPermission())
+                if (checkCameraPermission())
                     goToLoginActivity();
+                else {
+
+                    AlertDialog.Builder builder = new AlertDialog.Builder(splashActivity.this);
+                    dialog = builder.setMessage("QR코드로 주문하기 위해 카메라 권한을 요청합니다! :D")
+                            .setNegativeButton("확인", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                        requestPermissions(new String[]{Manifest.permission.CAMERA}, MY_PERMISSION_REQUEST_CODE);
+                                    }
+                                }
+                            })
+                            .create();
+                    dialog.setCanceledOnTouchOutside(false);
+                    dialog.show();
+
+                }
 
                 // if not
             } else {
@@ -92,6 +101,7 @@ public class splashActivity extends AppCompatActivity {
             @Override
             public void onErrorResponse(VolleyError error) {
                 try {
+                    Log.d(TAG, "connection check - fail");
                     errorReactor(error);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -105,14 +115,14 @@ public class splashActivity extends AppCompatActivity {
         System.out.println("error occured : " + error);
 
         loading_dialog.dismiss();
-        String errorMessage = "Cannot connect with server. turn on the WiFi or data and try again";
+        String errorMessage = "서버와 연결할 수 없습니다. 와이파이나 데이터를 킨 뒤에 다시 실행해 주세요";
 
         AlertDialog.Builder builder = new AlertDialog.Builder(splashActivity.this);
         dialog = builder.setMessage(errorMessage)
                 .setNegativeButton("ok", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        finish();
+                        finishAffinity();
                     }
                 })
                 .create();
@@ -120,21 +130,20 @@ public class splashActivity extends AppCompatActivity {
 
     }
 
-
     // request cameraPermission
-    protected boolean requestCameraPermission() {
+    protected boolean checkCameraPermission() {
         int APIVersion = android.os.Build.VERSION.SDK_INT;
 
         boolean isCameraPermissionGranted = false;
 
         // if API Level is up to 23
         if (APIVersion >= android.os.Build.VERSION_CODES.M) {
-            if (checkCAMERAPermission()) {
+            if (checkCameraPermissionHasGranted()) {
                 Log.i(this.getClass().getSimpleName(), "camera permission already granted");
                 isCameraPermissionGranted = true;
             } else {
-                Log.i(this.getClass().getSimpleName(), "camera permission already not granted");
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, MY_PERMISSION_REQUEST_CODE);
+                Log.i(this.getClass().getSimpleName(), "camera permission has not granted");
+//                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, MY_PERMISSION_REQUEST_CODE);
             }
         } else {
             // we set this as android API Level is lower than 23
@@ -145,7 +154,7 @@ public class splashActivity extends AppCompatActivity {
 
         return isCameraPermissionGranted;
     }
-    private boolean checkCAMERAPermission() {
+    private boolean checkCameraPermissionHasGranted() {
         int result = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA);
         return result == PackageManager.PERMISSION_GRANTED;
     }
@@ -159,23 +168,28 @@ public class splashActivity extends AppCompatActivity {
                     boolean cameraAccepted = (grantReults[0] == PackageManager.PERMISSION_GRANTED);
                     if (cameraAccepted) {
                         Log.i(this.getClass().getSimpleName(), "camera permission granted");
-//                        Intent intent = new Intent(splashActivity.this, loginActivity.class);
-//                        startActivity(intent);
                     } else {
                         Log.i(this.getClass().getSimpleName(), "camera permission not granted");
-
-//                        finish();
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                             if (shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)) {
-                                showMessagePermission("권한 허가를 요청합니다",
-                                        new DialogInterface.OnClickListener() {
+                                // enter the code if user deny for camera using permission
+                                // go to LoginActivity for now
+                                // need to ask permission when user uses QRscanning again
+                                AlertDialog.Builder builder = new AlertDialog.Builder(splashActivity.this);
+                                dialog = builder.setMessage("QR코드로 주문하기 위해 나중에라도 꼭 허용해 주세요! ;D")
+                                        .setNegativeButton("확인", new DialogInterface.OnClickListener() {
                                             @Override
                                             public void onClick(DialogInterface dialog, int which) {
                                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                                                    requestPermissions(new String[]{Manifest.permission.CAMERA}, MY_PERMISSION_REQUEST_CODE);
+                                                    goToLoginActivity();
                                                 }
                                             }
-                                        });
+                                        })
+                                        .create();
+                                dialog.setCanceledOnTouchOutside(false);
+                                dialog.show();
+
+
                                 return;
                             }
                         }
@@ -185,22 +199,12 @@ public class splashActivity extends AppCompatActivity {
                 break;
         }
     }
-    private void showMessagePermission(String message, DialogInterface.OnClickListener okListener) {
-        new android.support.v7.app.AlertDialog.Builder(this)
-                .setMessage(message)
-                .setPositiveButton("허용", okListener)
-                .create()
-                .show();
-    }
 
     // login activity intent
     private void goToLoginActivity() {
         Intent intent = new Intent(splashActivity.this, loginActivity.class);
         startActivity(intent);
-    }
-
-    public static splashActivity getInstance() {
-        return splashActivity;
+        finish();
     }
 
     @Override
@@ -208,12 +212,9 @@ public class splashActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
 
-        // for killed by other activity
-        splashActivity = this;
-
         // make login_dialog's background transparent
         loading_dialog = new loading_dialog(splashActivity.this);
-        loading_dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        loading_dialog.setup();
 
         // delay splash activity for SPLASH_DSPLAY_LENGTH : 2 sec
         new Handler().postDelayed(new Runnable() {

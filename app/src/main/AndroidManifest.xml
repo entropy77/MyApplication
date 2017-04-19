@@ -38,7 +38,7 @@
         <activity android:name=".User.PayingPage.payingActivity" />
         <activity android:name=".User.PayingCompletePage.payingCompleteActivity" />
         <activity android:name=".User.userMainActivity" />
-        <activity android:name=".User.RegisterPage.registerActivity" />
+        <activity android:name=".LoginPage.RegisterPage.registerActivity" />
         <activity android:name=".LoginPage.loginActivity" />
         <activity android:name=".Boss.bossMainActivity" />
         <activity android:name=".Boss.Fragments.itemListFragmentPage.itemAddPage.itemAddActivity"></activity>

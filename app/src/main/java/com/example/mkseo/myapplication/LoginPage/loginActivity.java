@@ -3,12 +3,9 @@ package com.example.mkseo.myapplication.LoginPage;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -20,24 +17,18 @@ import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.Volley;
-import com.example.mkseo.myapplication.LoginPage.splashPage.splashActivity;
 import com.example.mkseo.myapplication.R;
-import com.example.mkseo.myapplication.User.RegisterPage.registerActivity;
+import com.example.mkseo.myapplication.LoginPage.RegisterPage.registerActivity;
 import com.example.mkseo.myapplication.Boss.bossMainActivity;
 import com.example.mkseo.myapplication.User.userMainActivity;
 import com.example.mkseo.myapplication.loading_dialog;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.messaging.FirebaseMessaging;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
 
-import okhttp3.Call;
-import okhttp3.Callback;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -46,6 +37,8 @@ public class loginActivity extends AppCompatActivity {
 
     private AlertDialog dialog;
     private loading_dialog loading_dialog;
+
+    final String TAG = this.getClass().getSimpleName();
 
     // google iid check url
     private String Google_iid_check_url = "https://iid.googleapis.com/iid/info/";
@@ -65,6 +58,7 @@ public class loginActivity extends AppCompatActivity {
     private String login_id;
     private String password;
 
+    // for softKeyboard handling
     private InputMethodManager inputMethodManager;
 
     public void unsubscribeTopics(String response) {
@@ -98,7 +92,6 @@ public class loginActivity extends AppCompatActivity {
     // in get request, we ask subscribed topic list
     // than unsubscribe them
 
-    public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
     OkHttpClient client = new OkHttpClient();
 
     String getRequest(String token, String API_KEY) throws IOException {
@@ -110,19 +103,18 @@ public class loginActivity extends AppCompatActivity {
                 .build();
 
         okhttp3.Response response = client.newCall(request).execute();
-
-        unsubscribeTopics(response.body().string());
-
         return response.body().string();
 
     }
+
     public void askGoogleAboutTopics(final String token) {
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
                     String response = getRequest(token, Google_API_KEY);
-                    Log.d("response", response);
+                    unsubscribeTopics(response);
+                    Log.d(TAG, "response - " + response);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -145,18 +137,22 @@ public class loginActivity extends AppCompatActivity {
 
         return responseListener;
     }
+
     protected void reactor(String response) {
         try {
             JSONObject jsonResponse = new JSONObject(response);
+
+            // make dialog gone first
+            loading_dialog.dismiss();
+
             id = jsonResponse.getString("id");
             phone = jsonResponse.getString("phone");
             type = jsonResponse.getString("type");
 
-            System.out.println(this.getClass().getSimpleName());
-            System.out.println("received data from server");
-            System.out.println("id : " + id);
-            System.out.println("phone : " + phone);
-            System.out.println("type : " + type);
+            Log.d(TAG, "receiving data from server..");
+            Log.d(TAG, "id - " + id);
+            Log.d(TAG, "phone - " + phone);
+            Log.d(TAG, "type - " + type);
 
             // put id and password into SharedPreferences
             // this is because id and password are used all around the activities
@@ -201,9 +197,6 @@ public class loginActivity extends AppCompatActivity {
                     break;
             }
 
-            // make dialog gone first
-            loading_dialog.dismiss();
-
             // carry on with view changing
             startActivity(intent);
             finish();
@@ -228,14 +221,30 @@ public class loginActivity extends AppCompatActivity {
 
         return errorListener;
     }
+
     protected void errorReactor(VolleyError error) {
+
+        // make loading_dialog gone
         loading_dialog.dismiss();
-        int statusCode = error.networkResponse.statusCode;
-        // 401 error code is unreadable so be aware of that
+
+        // error string logging
+        Log.d(TAG, error.toString());
+
+        int statusCode;
+        if (error.networkResponse != null) {
+            // 401 error code is unreadable so be aware of that
+            statusCode = error.networkResponse.statusCode;
+        } else {
+            // 000 - can't connect with server
+            statusCode = 100;
+        }
 
         String errorMessage;
 
         switch (statusCode) {
+            case 100:
+                errorMessage = "서버와 연결할 수 없습니다. 와이파이나 데이터를 켜시고 다시 시도해 주세요";
+                break;
             case 400:
                 errorMessage = "빈칸없이 작성해주시기 바랍니다";
                 break;
@@ -251,8 +260,9 @@ public class loginActivity extends AppCompatActivity {
         }
         AlertDialog.Builder builder = new AlertDialog.Builder(loginActivity.this);
         dialog = builder.setMessage(errorMessage)
-                .setNegativeButton("ok", null)
+                .setNegativeButton("확인", null)
                 .create();
+        dialog.setCanceledOnTouchOutside(false);
         dialog.show();
     }
 
@@ -261,12 +271,9 @@ public class loginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        // kill splash screen
-        splashActivity.getInstance().finish();
-
         // loading dialog init
         loading_dialog = new loading_dialog(loginActivity.this);
-        loading_dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        loading_dialog.setup();
 
         // XML object assign(Buttons)
         final Button registerButton = (Button) findViewById(R.id.registerButtonOnLoginActivityTag);
@@ -275,6 +282,38 @@ public class loginActivity extends AppCompatActivity {
         // XML object assign(EditText)
         final EditText idText = (EditText) findViewById(R.id.idTextOnLoginActivityTag);
         final EditText passwordText = (EditText) findViewById(R.id.passwordTextOnLoginActivityTag);
+
+        // assign OnClicklistener on login button
+        loginButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                login_id = idText.getText().toString();
+                password = passwordText.getText().toString();
+
+                if (login_id.equals("") || password.equals("")) {
+
+                    String errorMessage = "아이디와 비밀번호를 입력해 주세요";
+
+                    AlertDialog.Builder builder = new AlertDialog.Builder(loginActivity.this);
+                    dialog = builder.setMessage(errorMessage)
+                            .setNegativeButton("확인", null)
+                            .create();
+                    dialog.setCanceledOnTouchOutside(false);
+                    dialog.show();
+                } else {
+                    loading_dialog.show();
+                    Log.d(TAG, "login_id - " + login_id);
+                    Log.d(TAG, "password - " + password);
+                    Log.d(TAG, "sending login_id and password to server...");
+
+                    loginRequest loginRequest = new loginRequest(login_id, password, getResponseListener(), getErrorListener());
+                    RequestQueue queue = Volley.newRequestQueue(loginActivity.this);
+                    queue.add(loginRequest);
+                }
+            }
+
+        });
 
         // assign onclicklistener on register button
         registerButton.setOnClickListener(new View.OnClickListener() {
@@ -300,26 +339,7 @@ public class loginActivity extends AppCompatActivity {
             }
         });
 
-        // assign OnClicklistener on login button
-        loginButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
 
-                loading_dialog.show();
-                login_id = idText.getText().toString();
-                password = passwordText.getText().toString();
-
-                System.out.println(this.getClass().getSimpleName());
-                System.out.println("sending data to Server");
-                System.out.println("login_id : " + login_id);
-                System.out.println("password : " + password);
-
-                loginRequest loginRequest = new loginRequest(login_id, password, getResponseListener(), getErrorListener());
-                RequestQueue queue = Volley.newRequestQueue(loginActivity.this);
-                queue.add(loginRequest);
-            }
-
-        });
     }
 
 

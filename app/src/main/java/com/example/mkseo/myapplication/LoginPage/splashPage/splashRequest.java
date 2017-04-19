@@ -22,7 +22,7 @@ public class splashRequest extends StringRequest {
         // RetryPolicy manual
 //        setRetryPolicy(new DefaultRetryPolicy(DefaultRetryPolicy.DEFAULT_TIMEOUT_MS, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
 
-        setRetryPolicy(new DefaultRetryPolicy(200, 5, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+        setRetryPolicy(new DefaultRetryPolicy(300, 5, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
 
     }
 

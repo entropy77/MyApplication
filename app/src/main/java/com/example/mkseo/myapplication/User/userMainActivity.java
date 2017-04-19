@@ -62,12 +62,6 @@ public class userMainActivity extends AppCompatActivity {
                 searchButton.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
 
                 openFragment(new user_main_Fragment());
-
-                // summon fragment manager
-//                FragmentManager fragmentManager = getSupportFragmentManager();
-//                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-//                fragmentTransaction.replace(R.id.userFragment, new user_main_Fragment());
-//                fragmentTransaction.commit();
             }
         });
 
@@ -82,12 +76,6 @@ public class userMainActivity extends AppCompatActivity {
                 searchButton.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
 
                 openFragment(new user_order_fragment());
-
-                // summon fragment manager
-//                FragmentManager fragmentManager = getSupportFragmentManager();
-//                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-//                fragmentTransaction.replace(R.id.userFragment, new user_order_fragment());
-//                fragmentTransaction.commit();
             }
         });
 
@@ -102,12 +90,6 @@ public class userMainActivity extends AppCompatActivity {
                 searchButton.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
 
                 openFragment(new user_consume_Fragment());
-
-                // summon fragment manager
-//                FragmentManager fragmentManager = getSupportFragmentManager();
-//                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-//                fragmentTransaction.replace(R.id.userFragment, new user_consume_Fragment());
-//                fragmentTransaction.commit();
             }
         });
 
@@ -120,12 +102,6 @@ public class userMainActivity extends AppCompatActivity {
                 orderButton.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
                 consumeButton.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
                 searchButton.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
-
-                // summon fragment manager
-//                FragmentManager fragmentManager = getSupportFragmentManager();
-//                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-//                fragmentTransaction.replace(R.id.userFragment, new user_search_Fragment());
-//                fragmentTransaction.commit();
 
                 openFragment(new user_search_Fragment());
             }

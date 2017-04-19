@@ -38,7 +38,7 @@
                         android:drawableLeft="@drawable/ic_person_black_24dp"
                         android:drawableStart="@drawable/ic_person_black_24dp"
                         android:hint="ID"
-                        android:inputType="textVisiblePassword"
+                        android:inputType="textEmailAddress"
                         android:lines="1"
                         android:padding="10dp" />
 

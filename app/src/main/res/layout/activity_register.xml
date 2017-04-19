@@ -4,13 +4,14 @@
     android:id="@+id/activity_register"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".User.RegisterPage.registerActivity">
+    tools:context=".LoginPage.RegisterPage.registerActivity">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/colorPrimary"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:id="@+id/backLinearLayout_activity_register">
 
         <TextView
             android:layout_width="match_parent"
@@ -36,8 +37,8 @@
                 android:layout_weight="1"
                 android:background="#FFFFFF"
                 android:drawableLeft="@drawable/ic_person_black_24dp"
-                android:hint="ID"
-                android:inputType="textVisiblePassword"
+                android:hint="ID (abcde@naver.com)"
+                android:inputType="textEmailAddress"
                 android:padding="10dp" />
 
             <EditText
