@@ -137,7 +137,6 @@ public class loginActivity extends AppCompatActivity {
 
         return responseListener;
     }
-
     protected void reactor(String response) {
         try {
             JSONObject jsonResponse = new JSONObject(response);
@@ -221,7 +220,6 @@ public class loginActivity extends AppCompatActivity {
 
         return errorListener;
     }
-
     protected void errorReactor(VolleyError error) {
 
         // make loading_dialog gone

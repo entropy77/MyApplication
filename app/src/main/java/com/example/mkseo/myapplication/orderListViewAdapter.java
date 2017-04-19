@@ -2,8 +2,6 @@ package com.example.mkseo.myapplication;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
-import android.text.Layout;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,12 +9,6 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
-import com.example.mkseo.myapplication.Boss.itemInfoForBoss;
-import com.example.mkseo.myapplication.R;
-import com.example.mkseo.myapplication.User.decimalChange;
-
-import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,25 +19,27 @@ import java.util.HashMap;
 
 public class orderListViewAdapter extends BaseAdapter {
 
+    private String TAG = this.getClass().getSimpleName();
+
     private Context context;
-    private ArrayList<ArrayList<HashMap<String, String>>> itemList;
-    private ArrayList<HashMap<String, String>> items;
+    private ArrayList<ArrayList<HashMap<String, String>>> items;
+    private ArrayList<HashMap<String, String>> informations;
     private ViewGroup parent;
 
-    public orderListViewAdapter(Context context, ArrayList<ArrayList<HashMap<String, String>>> itemList, ArrayList<HashMap<String, String>> items) {
+    public orderListViewAdapter(Context context, ArrayList<HashMap<String, String>> informations, ArrayList<ArrayList<HashMap<String, String>>> items) {
         this.context = context;
-        this.itemList = itemList;
+        this.informations = informations;
         this.items = items;
     }
 
     @Override
     public int getCount() {
-        return itemList.size();
+        return items.size();
     }
 
     @Override
     public Object getItem(int position) {
-        return itemList.get(position);
+        return items.get(position);
     }
 
     @Override
@@ -53,7 +47,14 @@ public class orderListViewAdapter extends BaseAdapter {
         return position;
     }
 
-    public void refreshAdapter() {
+    public void refresh(ArrayList<HashMap<String, String>> informations, ArrayList<ArrayList<HashMap<String, String>>> items) {
+        this.informations = informations;
+        this.items = items;
+
+        Log.d(TAG, "refreshing starts");
+        Log.d(TAG, informations.toString());
+        Log.d(TAG, items.toString());
+
         this.notifyDataSetChanged();
     }
 
@@ -84,25 +85,26 @@ public class orderListViewAdapter extends BaseAdapter {
         LinearLayout itemBoard = (LinearLayout) row.findViewById(R.id.itemBoard_boss_order_listview_row_text);
 
         //find 해당 position의 아이템 정보 context
-        final ArrayList<HashMap<String, String>> nowItemInfo = itemList.get(position);
+        final ArrayList<HashMap<String, String>> nowItemInfo = items.get(position);
 
         if (!isRowInitWasNull) {
             itemBoard.removeAllViews();
         }
         for (HashMap<String, String> itemArray : nowItemInfo) {
             View tempView = addView(itemArray.get("name"), itemArray.get("count"));
+            Log.d(TAG, position + " order item name - " + itemArray.get("name") + " " + itemArray.get("count"));
             itemBoard.addView(tempView);
         }
 
 //        System.out.println(position + " itemBoard's child count : " + itemBoard.getChildCount());
 
         // table_no update
-        table_noText.setText(items.get(position).get("table_no"));
-        itemId.setText("orderID : " + items.get(position).get("id"));
-        status.setText("status : " + items.get(position).get("status"));
-        accountIdText.setText("account_ID : " + items.get(position).get("account_id"));
-        compnayIdText.setText("company_ID : " + items.get(position).get("company_id"));
-        phoneText.setText("phone : " + items.get(position).get("phone"));
+        table_noText.setText(informations.get(position).get("table_no"));
+        itemId.setText("orderID : " + informations.get(position).get("id"));
+        status.setText("status : " + informations.get(position).get("status"));
+        accountIdText.setText("account_ID : " + informations.get(position).get("account_id"));
+        compnayIdText.setText("company_ID : " + informations.get(position).get("company_id"));
+        phoneText.setText("phone : " + informations.get(position).get("phone"));
 
         // row is view
         return row;

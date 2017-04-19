@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
@@ -16,8 +17,7 @@ import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.Volley;
-import com.example.mkseo.myapplication.LoginPage.loginActivity;
-import com.example.mkseo.myapplication.LoginPage.splashPage.splashActivity;
+import com.example.mkseo.myapplication.loading_dialog;
 import com.example.mkseo.myapplication.User.itemInfoForUser;
 import com.example.mkseo.myapplication.User.ListViewAdapter;
 import com.example.mkseo.myapplication.User.PayingPage.payingActivity;
@@ -34,10 +34,13 @@ import java.util.List;
 
 public class qrScanActivity extends Activity implements DecoratedBarcodeView.TorchListener {
 
+    private String TAG = this.getClass().getSimpleName();
+
     private int QRscanActivityID = 1;
     private DecoratedBarcodeView barcodeScannerView;
     private Button payingButton;
     private Dialog dialog;
+    private loading_dialog loading_dialog;
 
     public ArrayList<itemInfoForUser> infos = new ArrayList<>();
     private ListViewAdapter adapter;
@@ -75,6 +78,10 @@ public class qrScanActivity extends Activity implements DecoratedBarcodeView.Tor
 
         // setContentView must assign after status-bar disappearing
         setContentView(R.layout.activity_qr_scan);
+
+        // init loading_dialog
+        loading_dialog = new loading_dialog(qrScanActivity);
+        loading_dialog.setup();
 
         // QRscan related acts starts
         barcodeScannerView = (DecoratedBarcodeView) findViewById(R.id.zxing_barcode_scanner);
@@ -132,6 +139,8 @@ public class qrScanActivity extends Activity implements DecoratedBarcodeView.Tor
     }
 
     protected void reactor(String response) {
+
+        loading_dialog.dismiss();
         try {
             JSONObject jsonObject = new JSONObject(response);
 
@@ -156,6 +165,7 @@ public class qrScanActivity extends Activity implements DecoratedBarcodeView.Tor
                 // init count is 1
                 itemInfoForUser item = new itemInfoForUser(company_id, product_id, information, name, price, table_no, 1);
                 infos.add(item);
+                adapter.refreshAdapter(infos);
             }
 
 
@@ -182,6 +192,8 @@ public class qrScanActivity extends Activity implements DecoratedBarcodeView.Tor
 
     protected void errorReactor(VolleyError error) {
         barcodeScannerView.pause();
+
+        loading_dialog.dismiss();
 
         int statusCode = error.networkResponse.statusCode;
         // error code 401 is unreadable. be aware of it.
@@ -215,23 +227,29 @@ public class qrScanActivity extends Activity implements DecoratedBarcodeView.Tor
     }
 
 
+    private String duplicationCheckVar = "";
+
     private BarcodeCallback callback = new BarcodeCallback() {
         @Override
         public void barcodeResult(final BarcodeResult result) {
 
             if (result != null) {
-                final List<String> croppedText = AnalyzeRawTextFromQRcode.main(result.getText());
+                if (!duplicationCheckVar.equals(result.getText())) {
+                    Log.d(TAG, "found new item - " + result.getText());
+                    duplicationCheckVar = result.getText();
+                    final List<String> croppedText = AnalyzeRawTextFromQRcode.main(result.getText());
 
+                    // 1. 서버로 product_id, table_no 전송해서 jsonObject에 company_id, id, information, name, price, table_no 받아옴
+                    // 2. 필요한 name, price만 추출해서 사용
 
-                // 1. 서버로 product_id, table_no 전송해서 jsonObject에 company_id, id, information, name, price, table_no 받아옴
-                // 2. 필요한 name, price만 추출해서 사용
+                    loading_dialog.show();
+                    qrScanRequest qrScanRequest = new qrScanRequest(croppedText.get(0), croppedText.get(1), getResponseListener(), getErrorListener());
+                    RequestQueue queue = Volley.newRequestQueue(qrScanActivity.this);
+                    queue.add(qrScanRequest);
 
-                qrScanRequest qrScanRequest = new qrScanRequest(croppedText.get(0), croppedText.get(1), getResponseListener(), getErrorListener());
-                RequestQueue queue = Volley.newRequestQueue(qrScanActivity.this);
-                queue.add(qrScanRequest);
-
-                // this is for Developer
-                barcodeScannerView.setStatusText(result.getText());
+                    // this is for Developer
+                    barcodeScannerView.setStatusText(result.getText());
+                }
             }
         }
 

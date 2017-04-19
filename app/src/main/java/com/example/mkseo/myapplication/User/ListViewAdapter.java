@@ -2,6 +2,7 @@ package com.example.mkseo.myapplication.User;
 
 import android.app.Activity;
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,6 +20,8 @@ import java.util.ArrayList;
  */
 
 public class ListViewAdapter extends BaseAdapter {
+
+    private String TAG = this.getClass().getSimpleName();
 
     private Context context;
     private ArrayList<itemInfoForUser> itemList;
@@ -48,7 +51,9 @@ public class ListViewAdapter extends BaseAdapter {
         return position;
     }
 
-    public void refreshAdapter() {
+    public void refreshAdapter(ArrayList<itemInfoForUser> itemList) {
+        Log.d(TAG, "refreshing..");
+        this.itemList = itemList;
         this.notifyDataSetChanged();
     }
 
@@ -111,8 +116,6 @@ public class ListViewAdapter extends BaseAdapter {
                         ((com.example.mkseo.myapplication.User.PayingPage.payingActivity) context).setTotalPriceonTextView(decimalChange1.converting());
                     }
                 }
-
-                refreshAdapter();
             }
         });
 
@@ -144,7 +147,6 @@ public class ListViewAdapter extends BaseAdapter {
                         ((com.example.mkseo.myapplication.User.PayingPage.payingActivity) context).setTotalPriceonTextView(decimalChange1.converting());
                     }
                 }
-                refreshAdapter();
             }
         });
 
