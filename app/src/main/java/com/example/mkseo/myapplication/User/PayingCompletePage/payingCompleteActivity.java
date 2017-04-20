@@ -76,7 +76,7 @@ public class payingCompleteActivity extends AppCompatActivity {
         payingActivity.getInstance().finish();
         qrScanActivity.getInstance().finish();
 
-        // catch passed data from qrScanActivity which are infos and tableNumber
+        // catch passed data from qrScanActivity which are items and tableNumber
         Intent intent = getIntent();
         infos = (ArrayList<itemInfoForUser>) intent.getSerializableExtra("selectedItemArrayFrompayingActivity");
         id = String.valueOf(infos.get(infos.size() - 1).getCompany_id());

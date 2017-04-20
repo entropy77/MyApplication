@@ -39,7 +39,7 @@
 //    private Button payingButton;
 //    private Dialog dialog;
 //
-//    public ArrayList<itemInfoForUser> infos = new ArrayList<>();
+//    public ArrayList<itemInfoForUser> items = new ArrayList<>();
 //    private ListViewAdapter adapter;
 //    private ListView list;
 //
@@ -54,10 +54,10 @@
 //        super.onActivityResult(requestCode, resultCode, intent);
 //
 //        if (requestCode == 0) {
-//            // if the activity returned in any reason, got intent from that activity and retrive on the list(infos)
+//            // if the activity returned in any reason, got intent from that activity and retrive on the list(items)
 //            // this also include refresh action
-//            infos = (ArrayList<itemInfoForUser>) intent.getSerializableExtra("selectedItemArrayFromPayingActivity");
-//            adapter = new ListViewAdapter(this, infos, QRscanActivityID);
+//            items = (ArrayList<itemInfoForUser>) intent.getSerializableExtra("selectedItemArrayFromPayingActivity");
+//            adapter = new ListViewAdapter(this, items, QRscanActivityID);
 //            list.setAdapter(adapter);
 //        }
 //    }
@@ -90,9 +90,9 @@
 //        payingButton.setOnClickListener(new View.OnClickListener() {
 //            @Override
 //            public void onClick(View nowActivity) {
-//                // pass the data(infos) into another page(PayingPage) activity
+//                // pass the data(items) into another page(PayingPage) activity
 //                Intent intent = new Intent(nowActivity.getContext(), payingActivity.class);
-//                intent.putExtra("selectedItemArrayFromqrScanActivity", infos);
+//                intent.putExtra("selectedItemArrayFromqrScanActivity", items);
 ////                intent.putExtra("selectedTableNumber", public_table_no);
 //                startActivityForResult(intent, 0);
 //            }
@@ -108,7 +108,7 @@
 ////        }
 //
 //        // list view activity below
-//        ListViewAdapter adapter = new ListViewAdapter(this, infos, QRscanActivityID);
+//        ListViewAdapter adapter = new ListViewAdapter(this, items, QRscanActivityID);
 //        list = (ListView) this.findViewById(R.id.selectedItemList);
 //        list.setAdapter(adapter);
 //    }
@@ -136,7 +136,7 @@
 //
 //            // prevent same QR code scanning
 //            boolean isThisItemAlreadyExsist = false;
-//            for (itemInfoForUser row : infos) {
+//            for (itemInfoForUser row : items) {
 //                if (row.getName().equals(jsonObject.getString("name"))) {
 //                    isThisItemAlreadyExsist = true;
 //                }
@@ -154,7 +154,7 @@
 //
 //                // init count is 1
 //                itemInfoForUser item = new itemInfoForUser(company_id, product_id, information, name, price, table_no, 1);
-//                infos.add(item);
+//                items.add(item);
 //            }
 //
 //

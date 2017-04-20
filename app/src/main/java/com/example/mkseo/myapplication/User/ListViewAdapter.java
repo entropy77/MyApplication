@@ -12,6 +12,7 @@ import android.widget.TextView;
 
 import com.example.mkseo.myapplication.R;
 import com.example.mkseo.myapplication.User.PayingPage.totalPriceCalculating;
+import com.example.mkseo.myapplication.User.QRcodeScanPage.qrScanActivity;
 
 import java.util.ArrayList;
 
@@ -116,8 +117,11 @@ public class ListViewAdapter extends BaseAdapter {
                         ((com.example.mkseo.myapplication.User.PayingPage.payingActivity) context).setTotalPriceonTextView(decimalChange1.converting());
                     }
                 }
+
+                refreshAdapter(itemList);
             }
         });
+
 
         decreaseButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -128,6 +132,11 @@ public class ListViewAdapter extends BaseAdapter {
                     itemPrice.setText(Integer.toString(nowItemInfo.getPrice() * nowItemInfo.getCount()));
                 } else if (itemList.get(position).getCount() == 1) {
                     itemList.remove(position);
+
+                    // remove local raw message in qrScanActivity as well
+                    if (context instanceof qrScanActivity) {
+                        ((qrScanActivity) context).removeRawMessage(position);
+                    }
                 }
 
                 if (itemList.size() - 1 > -1)
@@ -147,6 +156,9 @@ public class ListViewAdapter extends BaseAdapter {
                         ((com.example.mkseo.myapplication.User.PayingPage.payingActivity) context).setTotalPriceonTextView(decimalChange1.converting());
                     }
                 }
+
+                refreshAdapter(itemList);
+
             }
         });
 

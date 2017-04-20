@@ -42,9 +42,13 @@ public class qrScanActivity extends Activity implements DecoratedBarcodeView.Tor
     private Dialog dialog;
     private loading_dialog loading_dialog;
 
-    public ArrayList<itemInfoForUser> infos = new ArrayList<>();
+    public ArrayList<itemInfoForUser> items = new ArrayList<>();
     private ListViewAdapter adapter;
     private ListView list;
+
+    // local_product_id, table_no
+    private String local_product_id;
+    private String table_no;
 
     // kill other activity related var
     public static qrScanActivity qrScanActivity;
@@ -57,10 +61,10 @@ public class qrScanActivity extends Activity implements DecoratedBarcodeView.Tor
         super.onActivityResult(requestCode, resultCode, intent);
 
         if (requestCode == 0) {
-            // if the activity returned in any reason, got intent from that activity and retrive on the list(infos)
+            // if the activity returned in any reason, got intent from that activity and retrive on the list(items)
             // this also include refresh action
-            infos = (ArrayList<itemInfoForUser>) intent.getSerializableExtra("selectedItemArrayFromPayingActivity");
-            adapter = new ListViewAdapter(this, infos, QRscanActivityID);
+            items = (ArrayList<itemInfoForUser>) intent.getSerializableExtra("selectedItemArrayFromPayingActivity");
+            adapter = new ListViewAdapter(this, items, QRscanActivityID);
             list.setAdapter(adapter);
         }
     }
@@ -97,9 +101,9 @@ public class qrScanActivity extends Activity implements DecoratedBarcodeView.Tor
         payingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View nowActivity) {
-                // pass the data(infos) into another page(PayingPage) activity
+                // pass the data(items) into another page(PayingPage) activity
                 Intent intent = new Intent(nowActivity.getContext(), payingActivity.class);
-                intent.putExtra("selectedItemArrayFromqrScanActivity", infos);
+                intent.putExtra("selectedItemArrayFromqrScanActivity", items);
 //                intent.putExtra("selectedTableNumber", public_table_no);
                 startActivityForResult(intent, 0);
             }
@@ -115,7 +119,7 @@ public class qrScanActivity extends Activity implements DecoratedBarcodeView.Tor
 //        }
 
         // list view activity below
-        ListViewAdapter adapter = new ListViewAdapter(this, infos, QRscanActivityID);
+        adapter = new ListViewAdapter(this, items, QRscanActivityID);
         list = (ListView) this.findViewById(R.id.selectedItemList);
         list.setAdapter(adapter);
     }
@@ -144,30 +148,29 @@ public class qrScanActivity extends Activity implements DecoratedBarcodeView.Tor
         try {
             JSONObject jsonObject = new JSONObject(response);
 
-            // prevent same QR code scanning
-            boolean isThisItemAlreadyExsist = false;
-            for (itemInfoForUser row : infos) {
-                if (row.getName().equals(jsonObject.getString("name"))) {
-                    isThisItemAlreadyExsist = true;
-                }
-            }
+//            // prevent same QR code scanning
+//            boolean isThisItemAlreadyExsist = false;
+//            for (itemInfoForUser row : items) {
+//                if (row.getName().equals(jsonObject.getString("name"))) {
+//                    isThisItemAlreadyExsist = true;
+//                }
+//            }
 
-            if (!isThisItemAlreadyExsist) {
-                // server side data structure
-                // v1/product/get_item
-                String company_id = jsonObject.getString("company_id");
-                String product_id = jsonObject.getString("id");
-                String information = jsonObject.getString("information");
-                String name = jsonObject.getString("name");
-                int price = Integer.parseInt(jsonObject.getString("price"));
-                int table_no = Integer.parseInt(jsonObject.getString("table_no"));
+            // server side data structure
+            // v1/product/get_item
+            String company_id = jsonObject.getString("company_id");
+            String product_id = jsonObject.getString("id");
+            String information = jsonObject.getString("information");
+            String name = jsonObject.getString("name");
+            int price = Integer.parseInt(jsonObject.getString("price"));
+            int table_no = Integer.parseInt(jsonObject.getString("table_no"));
 
-                // init count is 1
-                itemInfoForUser item = new itemInfoForUser(company_id, product_id, information, name, price, table_no, 1);
-                infos.add(item);
-                adapter.refreshAdapter(infos);
-            }
+            // init count is 1
+            itemInfoForUser item = new itemInfoForUser(company_id, product_id, information, name, price, table_no, 1);
+            items.add(item);
 
+            // refresh listview
+            adapter.refreshAdapter(items);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -199,9 +202,7 @@ public class qrScanActivity extends Activity implements DecoratedBarcodeView.Tor
         // error code 401 is unreadable. be aware of it.
         String errorMessage;
 
-        System.out.println(this.getClass().getSimpleName());
-        System.out.println("error occurred : " + error.getMessage());
-        System.out.println("error status code : " + statusCode);
+        Log.d(TAG, statusCode + " " + error.getMessage());
 
         switch (statusCode) {
             case 400:
@@ -226,31 +227,110 @@ public class qrScanActivity extends Activity implements DecoratedBarcodeView.Tor
         dialog.show();
     }
 
+    private void requestQRinformation(String result) {
+
+        // crop raw text with specific rule -> AnalyzeRawTextFromQRcode class
+        List<String> croppedText = AnalyzeRawTextFromQRcode.main(result);
+        local_product_id = croppedText.get(0);
+        table_no = croppedText.get(1);
+
+        // show loading_dialog
+        loading_dialog.show();
+
+        // request server about QRcode information
+        qrScanRequest qrScanRequest = new qrScanRequest(local_product_id, table_no, getResponseListener(), getErrorListener());
+        RequestQueue queue = Volley.newRequestQueue(qrScanActivity.this);
+        queue.add(qrScanRequest);
+    }
 
     private String duplicationCheckVar = "";
+
+    private ArrayList<String> rawMessages = new ArrayList<>();
+
+    // called from external class: ListViewAdapter
+    public void removeRawMessage(int position) {
+        Log.d(TAG, "remove local raw message");
+        Log.d(TAG, rawMessages.toString());
+        rawMessages.remove(position);
+    }
 
     private BarcodeCallback callback = new BarcodeCallback() {
         @Override
         public void barcodeResult(final BarcodeResult result) {
 
-            if (result != null) {
-                if (!duplicationCheckVar.equals(result.getText())) {
-                    Log.d(TAG, "found new item - " + result.getText());
-                    duplicationCheckVar = result.getText();
-                    final List<String> croppedText = AnalyzeRawTextFromQRcode.main(result.getText());
+            boolean isThisRawMessageDuplicated = false;
 
-                    // 1. 서버로 product_id, table_no 전송해서 jsonObject에 company_id, id, information, name, price, table_no 받아옴
-                    // 2. 필요한 name, price만 추출해서 사용
-
-                    loading_dialog.show();
-                    qrScanRequest qrScanRequest = new qrScanRequest(croppedText.get(0), croppedText.get(1), getResponseListener(), getErrorListener());
-                    RequestQueue queue = Volley.newRequestQueue(qrScanActivity.this);
-                    queue.add(qrScanRequest);
-
-                    // this is for Developer
-                    barcodeScannerView.setStatusText(result.getText());
+            for (String rawMessage : rawMessages) {
+                if (rawMessage.equals(result.getText())) {
+                    isThisRawMessageDuplicated = true;
+                    break;
                 }
             }
+
+            if (!isThisRawMessageDuplicated) {
+                rawMessages.add(result.getText());
+                Log.d(TAG, "add local raw message");
+                Log.d(TAG, rawMessages.toString());
+                requestQRinformation(result.getText());
+            }
+
+
+
+//            if (items.size() == 0) {
+//                // include connect with server
+//                // save items into local
+//                // refresh adapter(listview)
+//                requestQRinformation(result.getText());
+//            } else {
+//                List<String> croppedText = AnalyzeRawTextFromQRcode.main(result.getText());
+//                String tempProduct_id = croppedText.get(0);
+//
+//                boolean isThisItemDuplicated = false;
+//
+//                // prevent same QR code scanning
+//                for (itemInfoForUser row : items) {
+//                    if (row.getProduct_id().equals(tempProduct_id)) {
+//                        isThisItemDuplicated = true;
+//                        break;
+//                    }
+//                }
+//
+//                if (!isThisItemDuplicated) {
+//                    requestQRinformation(result.getText());
+//                }
+//            }
+
+//            if (result != null) {
+//                if (!duplicationCheckVar.equals(result.getText())) {
+//                    Log.d(TAG, "found new item - " + result.getText());
+//                    duplicationCheckVar = result.getText();
+//                    final List<String> croppedText = AnalyzeRawTextFromQRcode.main(result.getText());
+//
+//                    // 1. 서버로 product_id, table_no 전송해서 jsonObject에 company_id, id, information, name, price, table_no 받아옴
+//                    // 2. 필요한 name, price만 추출해서 사용
+//
+//                    // this is for Developer
+//                    barcodeScannerView.setStatusText(result.getText());
+//
+//                    boolean isThisItemAlreadyExsist = false;
+//                    if (items != null) {
+//                        // prevent same QR code scanning
+//                        for (itemInfoForUser row : items) {
+//                            if (row.getName().equals(result)) {
+//                                isThisItemAlreadyExsist = true;
+//                            }
+//                        }
+//                    }
+//                    if (!isThisItemAlreadyExsist) {
+//
+//                        loading_dialog.show();
+//                        qrScanRequest qrScanRequest = new qrScanRequest(croppedText.get(0), croppedText.get(1), getResponseListener(), getErrorListener());
+//                        RequestQueue queue = Volley.newRequestQueue(qrScanActivity.this);
+//                        queue.add(qrScanRequest);
+//
+//                    }
+//                }
+//            }
         }
 
         @Override

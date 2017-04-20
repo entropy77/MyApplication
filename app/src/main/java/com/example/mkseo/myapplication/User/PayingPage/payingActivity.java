@@ -89,7 +89,7 @@ public class payingActivity extends AppCompatActivity {
             public void onClick(View nowActivity) {
 
                 System.out.println("");
-//                if there is no items in infos, don't do this'
+//                if there is no items in items, don't do this'
                 if (infos.size() != 0) {
                     loading_dialog.show();
                     table_no = String.valueOf(infos.get(infos.size() - 1).getTable_no());
@@ -101,7 +101,7 @@ public class payingActivity extends AppCompatActivity {
                         System.out.println("");
                     }
 
-                    System.out.println("infos in payingActivity : " + infos);
+                    System.out.println("items in payingActivity : " + infos);
 
                     requestToServer(makeJsonTable());
                 } else {
@@ -124,7 +124,7 @@ public class payingActivity extends AppCompatActivity {
             }
         });
 
-        // catch passed data from qrScanActivity which are infos and tableNumber
+        // catch passed data from qrScanActivity which are items and tableNumber
         Intent intent = getIntent();
         infos = (ArrayList<itemInfoForUser>) intent.getSerializableExtra("selectedItemArrayFromqrScanActivity");
 
@@ -257,9 +257,9 @@ public class payingActivity extends AppCompatActivity {
 //                    // make JSONTable
 //                    makeJsonTable();
 //
-//                    // send infos to payingCompleteActivity
+//                    // send items to payingCompleteActivity
 //                    Intent intent = new Intent(payingActivity.this, payingCompleteActivity.class);
-//                    intent.putExtra("selectedItemArrayFrompayingActivity", infos);
+//                    intent.putExtra("selectedItemArrayFrompayingActivity", items);
 //                    startActivity(intent);
 ////                    this is for debugging
 ////                    System.out.println(response.toString());
