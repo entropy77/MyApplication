@@ -131,7 +131,9 @@ public class user_order_fragment extends Fragment {
             put_JSONdata_into_local_data(jsonMessage);
 
             // refreshListview
+            // refreshRequest -> reactor -> put_JSONdata_into_local_data -> refreshListview
             refreshListview();
+
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -255,26 +257,24 @@ public class user_order_fragment extends Fragment {
         }
     }
     protected void refreshListview() {
-
         Log.d(TAG, "refreshing listview...");
 
-        // init adapter
         orderListViewAdapter orderListViewAdapter = new orderListViewAdapter(getActivity(), informations, items);
         listView.setAdapter(orderListViewAdapter);
-//        items.clear();
         orderListViewAdapter.notifyDataSetChanged();
-//        orderListViewAdapter.refreshAdapter();
     }
 
     // it include server connection
     public void refreshRequest(String login_id, String password) {
+
+        // start loading_dialog since we are connecting with server
+        loading_dialog.show();
 
         // request to server about data
         user_order_request user_order_request = new user_order_request(login_id, password, getResponseListener(), getErrorListener());
         RequestQueue queue = Volley.newRequestQueue(getActivity());
         queue.add(user_order_request);
     }
-
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -294,12 +294,11 @@ public class user_order_fragment extends Fragment {
         String login_id = preferences.getString("login_id", null);
         String password = preferences.getString("password", null);
 
-        // start loading_dialog since we are connecting with server
-        loading_dialog.show();
-
         // connect with server
         // it will automatically refresh listview
         // we need to connect with server in order to refresh listview
+
+        // this method will be used on response for push notification
         refreshRequest(login_id, password);
 
         return view;

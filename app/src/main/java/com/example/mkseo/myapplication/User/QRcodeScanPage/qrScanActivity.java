@@ -46,85 +46,15 @@ public class qrScanActivity extends Activity implements DecoratedBarcodeView.Tor
     private ListViewAdapter adapter;
     private ListView list;
 
-    // local_product_id, table_no
-    private String local_product_id;
-    private String table_no;
+    // local raw messages from qrscanning
+    private ArrayList<String> rawMessages = new ArrayList<>();
 
     // kill other activity related var
     public static qrScanActivity qrScanActivity;
 
-    // when PayingActivity has ended
-    // this is related with intent communication
-    // sort of callback method once sub activity has finished
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent intent) {
-        super.onActivityResult(requestCode, resultCode, intent);
-
-        if (requestCode == 0) {
-            // if the activity returned in any reason, got intent from that activity and retrive on the list(items)
-            // this also include refresh action
-            items = (ArrayList<itemInfoForUser>) intent.getSerializableExtra("selectedItemArrayFromPayingActivity");
-            adapter = new ListViewAdapter(this, items, QRscanActivityID);
-            list.setAdapter(adapter);
-        }
-    }
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        // kill other activity related assign
-        qrScanActivity = this;
-
-        // make status-bar disappear
-//        requestWindowFeature(Window.FEATURE_NO_TITLE);
-//        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-
-        // setContentView must assign after status-bar disappearing
-        setContentView(R.layout.activity_qr_scan);
-
-        // init loading_dialog
-        loading_dialog = new loading_dialog(qrScanActivity);
-        loading_dialog.setup();
-
-        // QRscan related acts starts
-        barcodeScannerView = (DecoratedBarcodeView) findViewById(R.id.zxing_barcode_scanner);
-        barcodeScannerView.decodeContinuous(callback);
-//        barcodeScannerView.setTorchListener(this);
-//        barcodeScannerView.
-
-
-        // put Button with XML
-        payingButton = (Button) findViewById(R.id.payingButtonInQrScanTag);
-
-        // 다 고르셨나요? button clicked event handler
-        payingButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View nowActivity) {
-                // pass the data(items) into another page(PayingPage) activity
-                Intent intent = new Intent(nowActivity.getContext(), payingActivity.class);
-                intent.putExtra("selectedItemArrayFromqrScanActivity", items);
-//                intent.putExtra("selectedTableNumber", public_table_no);
-                startActivityForResult(intent, 0);
-            }
-        });
-
-//        you can use flash light turn on/off button(id:switch_flashlight)
-//        switchFlashlightButton = (Button)findViewById(R.id.switch_flashlight);
-
-//        if the device does not have flashlight in its camera,
-//        then remove the switch flashlight button...
-//        if (!hasFlash()) {
-//            switchFlashlightButton.setVisibility(View.GONE);
-//        }
-
-        // list view activity below
-        adapter = new ListViewAdapter(this, items, QRscanActivityID);
-        list = (ListView) this.findViewById(R.id.selectedItemList);
-        list.setAdapter(adapter);
-    }
-
-    // QRscan methods for continuous scan 17. 03. 09
+    // -----------------------
+    // regular process methods
+    // -----------------------
 
     // good response
     protected Response.Listener<String> getResponseListener() {
@@ -141,20 +71,11 @@ public class qrScanActivity extends Activity implements DecoratedBarcodeView.Tor
 
         return responseListener;
     }
-
     protected void reactor(String response) {
 
         loading_dialog.dismiss();
         try {
             JSONObject jsonObject = new JSONObject(response);
-
-//            // prevent same QR code scanning
-//            boolean isThisItemAlreadyExsist = false;
-//            for (itemInfoForUser row : items) {
-//                if (row.getName().equals(jsonObject.getString("name"))) {
-//                    isThisItemAlreadyExsist = true;
-//                }
-//            }
 
             // server side data structure
             // v1/product/get_item
@@ -192,7 +113,6 @@ public class qrScanActivity extends Activity implements DecoratedBarcodeView.Tor
 
         return errorListener;
     }
-
     protected void errorReactor(VolleyError error) {
         barcodeScannerView.pause();
 
@@ -224,6 +144,7 @@ public class qrScanActivity extends Activity implements DecoratedBarcodeView.Tor
                     }
                 })
                 .create();
+        dialog.setCanceledOnTouchOutside(false);
         dialog.show();
     }
 
@@ -231,27 +152,43 @@ public class qrScanActivity extends Activity implements DecoratedBarcodeView.Tor
 
         // crop raw text with specific rule -> AnalyzeRawTextFromQRcode class
         List<String> croppedText = AnalyzeRawTextFromQRcode.main(result);
-        local_product_id = croppedText.get(0);
-        table_no = croppedText.get(1);
+        String localProductID = croppedText.get(0);
+        String localTable_no = croppedText.get(1);
 
         // show loading_dialog
         loading_dialog.show();
 
         // request server about QRcode information
-        qrScanRequest qrScanRequest = new qrScanRequest(local_product_id, table_no, getResponseListener(), getErrorListener());
+        qrScanRequest qrScanRequest = new qrScanRequest(localProductID, localTable_no, getResponseListener(), getErrorListener());
         RequestQueue queue = Volley.newRequestQueue(qrScanActivity.this);
         queue.add(qrScanRequest);
     }
-
-    private String duplicationCheckVar = "";
-
-    private ArrayList<String> rawMessages = new ArrayList<>();
 
     // called from external class: ListViewAdapter
     public void removeRawMessage(int position) {
         Log.d(TAG, "remove local raw message");
         Log.d(TAG, rawMessages.toString());
         rawMessages.remove(position);
+    }
+
+    // -----------------------
+    // react methods
+    // -----------------------
+
+    // when PayingActivity has ended
+    // this is related with intent communication
+    // sort of callback method once sub activity has finished
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        super.onActivityResult(requestCode, resultCode, intent);
+
+        if (requestCode == 0) {
+            // if the activity returned in any reason, got intent from that activity and retrive on the list(items)
+            // this also include refresh action
+            items = (ArrayList<itemInfoForUser>) intent.getSerializableExtra("selectedItemArrayFromPayingActivity");
+            adapter = new ListViewAdapter(this, items, QRscanActivityID);
+            list.setAdapter(adapter);
+        }
     }
 
     private BarcodeCallback callback = new BarcodeCallback() {
@@ -339,6 +276,76 @@ public class qrScanActivity extends Activity implements DecoratedBarcodeView.Tor
         }
     };
 
+    // kill other activity related method
+    public static qrScanActivity getInstance() {
+        return qrScanActivity;
+    }
+
+    // -----------------------
+    // main process
+    // -----------------------
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        // kill other activity related assign
+        qrScanActivity = this;
+
+        // make status-bar disappear
+//        requestWindowFeature(Window.FEATURE_NO_TITLE);
+//        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+        // setContentView must assign after status-bar disappearing
+        setContentView(R.layout.activity_qr_scan);
+
+        // init loading_dialog
+        loading_dialog = new loading_dialog(qrScanActivity);
+        loading_dialog.setup();
+
+        // QRscan related acts starts
+        barcodeScannerView = (DecoratedBarcodeView) findViewById(R.id.zxing_barcode_scanner);
+        barcodeScannerView.decodeContinuous(callback);
+//        barcodeScannerView.setTorchListener(this);
+
+        // list view activity below
+        adapter = new ListViewAdapter(this, items, QRscanActivityID);
+        list = (ListView) this.findViewById(R.id.selectedItemList);
+        list.setAdapter(adapter);
+
+        // put Button with XML
+        payingButton = (Button) findViewById(R.id.payingButtonInQrScanTag);
+
+        // 다 고르셨나요? button clicked event handler
+        payingButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View nowActivity) {
+                // pass the data(items) into another page(PayingPage) activity
+                Intent intent = new Intent(nowActivity.getContext(), payingActivity.class);
+                intent.putExtra("selectedItemArrayFromqrScanActivity", items);
+                startActivityForResult(intent, 0);
+            }
+        });
+
+//        you can use flash light turn on/off button(id:switch_flashlight)
+//        switchFlashlightButton = (Button)findViewById(R.id.switch_flashlight);
+
+//        if the device does not have flashlight in its camera,
+//        then remove the switch flashlight button...
+//        if (!hasFlash()) {
+//            switchFlashlightButton.setVisibility(View.GONE);
+//        }
+
+    }
+
+    // QRscan methods for continuous scan 17. 03. 09
+
+    // -----------------------
+    // ETC
+    // -----------------------
+
+    //region activity control related methods
+
     @Override
     protected void onRestart() {
         super.onRestart();
@@ -356,7 +363,7 @@ public class qrScanActivity extends Activity implements DecoratedBarcodeView.Tor
         barcodeScannerView.pause();
     }
 
-//    @Override
+    //    @Override
 //    protected void onDestroy() {
 //        super.onDestroy();
 //        captureManager.onDestroy();
@@ -367,6 +374,9 @@ public class qrScanActivity extends Activity implements DecoratedBarcodeView.Tor
 //        super.onSaveInstanceState(outState);
 //        captureManager.onSaveInstanceState(outState);
 //    }
+
+    //endregion
+    //region barcodeScanner control related methods
 
     public void pause(View view) {
         barcodeScannerView.pause();
@@ -400,11 +410,6 @@ public class qrScanActivity extends Activity implements DecoratedBarcodeView.Tor
 //        switchFlashlightButton.setText("Turn on Flashlight");
     }
 
-    // listview related method starts
-
-    // kill other activity related method
-    public static qrScanActivity getInstance() {
-        return qrScanActivity;
-    }
+    //endregion
 
 }

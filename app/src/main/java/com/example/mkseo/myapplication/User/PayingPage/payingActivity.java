@@ -6,21 +6,14 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.android.volley.RequestQueue;
-//import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.Volley;
 import com.example.mkseo.myapplication.User.PayingCompletePage.payingCompleteActivity;
 import com.example.mkseo.myapplication.User.itemInfoForUser;
 import com.example.mkseo.myapplication.User.ListViewAdapter;
@@ -43,7 +36,11 @@ import okhttp3.Response;
 
 public class payingActivity extends AppCompatActivity {
 
-    private ArrayList<itemInfoForUser> infos;
+    private String TAG = this.getClass().getSimpleName();
+
+    final static private String url = "http://leafrog.iptime.org:20080/v1/order/create";
+
+    private ArrayList<itemInfoForUser> items;
     private int PayingActivityID = 2;
     private TextView totalPrice;
     private Button payingButton;
@@ -57,6 +54,113 @@ public class payingActivity extends AppCompatActivity {
     // example for kill other activity
     static payingActivity payingActivity;
 
+//    // good response
+//    protected Response.Listener<String> getResponseListener() {
+//        Response.Listener responseListener = new Response.Listener<String>() {
+//            @Override
+//            public void onResponse(String response) {
+//                try {
+//                    reactor(response);
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        };
+//
+//        return responseListener;
+//    }
+//    protected void reactor(String response) {
+//
+//        loading_dialog.dismiss();
+//        try {
+//            JSONObject jsonObject = new JSONObject(response);
+//
+//            Intent intent = new Intent(payingActivity.this, payingCompleteActivity.class);
+//            intent.putExtra("selectedItemArrayFrompayingActivity", items);
+//            startActivity(intent);
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
+//
+//    // error response
+//    protected Response.ErrorListener getErrorListener() {
+//        com.android.volley.Response.ErrorListener errorListener = new com.android.volley.Response.ErrorListener() {
+//            @Override
+//            public void onErrorResponse(VolleyError error) {
+//                try {
+//                    errorReactor(error);
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        };
+//
+//        return errorListener;
+//    }
+//    protected void errorReactor(VolleyError error) {
+//        loading_dialog.dismiss();
+//
+//        int statusCode;
+//        // error code 401 is unreadable. be aware of it.
+//
+//        if (error.networkResponse != null) {
+//            // 401 error code is unreadable so be aware of that
+//            statusCode = error.networkResponse.statusCode;
+//        } else {
+//            // 000 - can't connect with server
+//            statusCode = 100;
+//        }
+//
+//        String errorMessage;
+//
+//        Log.d(TAG, statusCode + " " + error.getMessage());
+//
+//
+////        400 : required 인자가 불충족됨
+////        401 : table_no 가 숫자가 아닌 경우
+////        404 : 사용자 계정이 존재하지 않음
+////        405 : products 의 인자가 충분하지 않음 (product_id, count 둘중 하나 누락)
+////        406 : product 들에 대한 회사가 존재하지 않거나, 2개 이상의 회사가 조회됨
+////        407 : 제품 정보가 존재하지 않음 (하나라도 없을 경우, 주문되지 않음)
+////        410 : 쿼리 실행 중 에러
+////        200 : ok
+//
+//        switch (statusCode) {
+//            case 400:
+//                errorMessage = "인자가 충분하지 않습니다";
+//                break;
+//            case 401:
+//                errorMessage = "table_no가 숫자가 아닙니다";
+//                break;
+//            case 404:
+//                errorMessage = "사용자 게정이 존재하지 않습니다";
+//                break;
+//            case 405:
+//                errorMessage = "product_id나 count 둘 중 하나가 누락되었습니다";
+//                break;
+//            case 406:
+//                errorMessage = "product들에 대한 회사가 존재하지 않거나 2개 이상의 회사가 조회되었습니다";
+//                break;
+//            case 407:
+//                errorMessage = "제품 정보가 존재하지 않습니다";
+//                break;
+//            case 410:
+//                errorMessage = "쿼리 에러가 발생하였습니다";
+//                break;
+//            default:
+//                errorMessage = "알수없는 에러가 발생하였습니다";
+//                break;
+//        }
+//        AlertDialog.Builder builder = new AlertDialog.Builder(payingActivity.this);
+//        dialog = builder.setMessage(errorMessage)
+//                .setNegativeButton("ok", null)
+//                .create();
+//        dialog.setCanceledOnTouchOutside(false);
+//        dialog.show();
+//    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,9 +168,10 @@ public class payingActivity extends AppCompatActivity {
         payingActivity = this;
 
         loading_dialog = new loading_dialog(payingActivity.this);
-        loading_dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        loading_dialog.setup();
 
         // make status-bar disappear
+        // 사용보류
 //        requestWindowFeature(Window.FEATURE_NO_TITLE);
 //        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
@@ -90,23 +195,20 @@ public class payingActivity extends AppCompatActivity {
 
                 System.out.println("");
 //                if there is no items in items, don't do this'
-                if (infos.size() != 0) {
+                if (items.size() != 0) {
                     loading_dialog.show();
-                    table_no = String.valueOf(infos.get(infos.size() - 1).getTable_no());
+                    table_no = String.valueOf(items.get(items.size() - 1).getTable_no());
 
                     // need to request paying related action from Server
-                    for (itemInfoForUser item : infos) {
-                        System.out.println("name : " + item.getName());
-                        System.out.println("count : " + item.getCount());
-                        System.out.println("");
+                    for (itemInfoForUser item : items) {
+                        Log.d(TAG, item.getName() + " - " + item.getCount());
                     }
 
-                    System.out.println("items in payingActivity : " + infos);
-
-                    requestToServer(makeJsonTable());
+                    JSONObject jsonObject = makeJsonTable();
+                    requestToServer(jsonObject);
                 } else {
 
-                    String errorMessage = "there is no item to pay. try to select items and pay again.";
+                    String errorMessage = "결제할 메뉴가 없습니다. 먼저 메뉴를 선택해 주세요";
 
                     AlertDialog.Builder builder = new AlertDialog.Builder(payingActivity.this);
                     dialog = builder.setMessage(errorMessage)
@@ -118,6 +220,7 @@ public class payingActivity extends AppCompatActivity {
                                 }
                             })
                             .create();
+                    dialog.setCanceledOnTouchOutside(false);
                     dialog.show();
                 }
 
@@ -126,21 +229,31 @@ public class payingActivity extends AppCompatActivity {
 
         // catch passed data from qrScanActivity which are items and tableNumber
         Intent intent = getIntent();
-        infos = (ArrayList<itemInfoForUser>) intent.getSerializableExtra("selectedItemArrayFromqrScanActivity");
+        items = (ArrayList<itemInfoForUser>) intent.getSerializableExtra("selectedItemArrayFromqrScanActivity");
 
         System.out.println("table_no on PayingActivity : " + table_no);
 
         // sum total price
-        totalPriceCalculating totalPriceCalculating = new totalPriceCalculating(infos);
+        totalPriceCalculating totalPriceCalculating = new totalPriceCalculating(items);
         int tempTotalPrice = totalPriceCalculating.calculating();
         decimalChange decimalChange = new decimalChange(tempTotalPrice);
         totalPrice.setText(decimalChange.converting());
 
         // listview assign
-        ListViewAdapter adapter = new ListViewAdapter(this, infos, PayingActivityID);
+        ListViewAdapter adapter = new ListViewAdapter(this, items, PayingActivityID);
         listView.setAdapter(adapter);
 
     }
+
+//    private void requestPayment(JSONObject paymentItemList) {
+//
+//        loading_dialog.show();
+//
+//        payingRequest payingRequest = new payingRequest(paymentItemList, getResponseListener(), getErrorListener());
+//
+//        RequestQueue queue = Volley.newRequestQueue(payingActivity);
+//        queue.add(payingRequest);
+//    }
 
     private JSONObject makeJsonTable() {
         // reconstruct item list since server side item structure is not matched with it
@@ -163,7 +276,7 @@ public class payingActivity extends AppCompatActivity {
             // product_id:
             // count:
             JSONArray products = new JSONArray();
-            for (itemInfoForUser nowItem : infos) {
+            for (itemInfoForUser nowItem : items) {
                 JSONObject item = new JSONObject();
 
                 //caution this converting action may cause problem
@@ -176,6 +289,8 @@ public class payingActivity extends AppCompatActivity {
 
             // complete JSONMessage
             orderJSONMessage.put("products", products);
+
+            Log.d(TAG, orderJSONMessage.toString());
 
             return orderJSONMessage;
         } catch (Exception e) {
@@ -197,7 +312,7 @@ public class payingActivity extends AppCompatActivity {
     public void returnIntent() {
         // return modified paying data
         Intent intent = new Intent();
-        intent.putExtra("selectedItemArrayFromPayingActivity", infos);
+        intent.putExtra("selectedItemArrayFromPayingActivity", items);
         setResult(Activity.RESULT_OK, intent);
         finish();
     }
@@ -209,17 +324,16 @@ public class payingActivity extends AppCompatActivity {
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
     OkHttpClient client = new OkHttpClient();
 
-    String post(String url, String json) throws IOException {
+    String postRequest(String url, String json) throws IOException {
 
         RequestBody body = RequestBody.create(JSON, json);
         Request request = new Request.Builder()
                 .url(url)
                 .post(body)
                 .build();
-
         Response response = client.newCall(request).execute();
-        return response.body().string();
 
+        return response.body().string();
     }
 
     public void requestToServer(final JSONObject orderJSONMessage) {
@@ -228,7 +342,7 @@ public class payingActivity extends AppCompatActivity {
             @Override
             public void run() {
                 try {
-                    String response = post("http://leafrog.iptime.org:20080/v1/order/create", orderJSONMessage.toString());
+                    String response = postRequest("http://leafrog.iptime.org:20080/v1/order/create", orderJSONMessage.toString());
                     Log.d("response", response);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -236,9 +350,10 @@ public class payingActivity extends AppCompatActivity {
             }
         }).start();
 
+
         loading_dialog.dismiss();
         Intent intent = new Intent(payingActivity.this, payingCompleteActivity.class);
-        intent.putExtra("selectedItemArrayFrompayingActivity", infos);
+        intent.putExtra("selectedItemArrayFrompayingActivity", items);
         startActivity(intent);
 
 
