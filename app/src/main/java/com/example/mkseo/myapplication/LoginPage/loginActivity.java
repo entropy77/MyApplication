@@ -40,12 +40,6 @@ public class loginActivity extends AppCompatActivity {
 
     final String TAG = this.getClass().getSimpleName();
 
-    // google iid check url
-    private String Google_iid_check_url = "https://iid.googleapis.com/iid/info/";
-
-    // google API_KEY(2017. 04. 12.)
-    private String Google_API_KEY = "AAAA1kFKYlo:APA91bH0drmyubir837UfkDtoavFjzXyrSc0b3H-ZLsknM8j8JpCAZ59nvIE-MR42MHhkILcSwI9wZsxMe4E0y5jSHiQMaMRIEuaNfya3QOGGjo50VFHM8fUhP67T_6N4eyom7OE_FD4";
-
     // token for push message
     private String token;
 
@@ -93,6 +87,11 @@ public class loginActivity extends AppCompatActivity {
     // than unsubscribe them
 
     OkHttpClient client = new OkHttpClient();
+    // google iid check url
+    private String Google_iid_check_url = "https://iid.googleapis.com/iid/info/";
+
+    // google API_KEY(2017. 04. 12.)
+    private String Google_API_KEY = "AAAA1kFKYlo:APA91bH0drmyubir837UfkDtoavFjzXyrSc0b3H-ZLsknM8j8JpCAZ59nvIE-MR42MHhkILcSwI9wZsxMe4E0y5jSHiQMaMRIEuaNfya3QOGGjo50VFHM8fUhP67T_6N4eyom7OE_FD4";
 
     String getRequest(String token, String API_KEY) throws IOException {
 
