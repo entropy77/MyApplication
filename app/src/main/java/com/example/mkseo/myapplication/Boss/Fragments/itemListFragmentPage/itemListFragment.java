@@ -171,6 +171,9 @@ public class itemListFragment extends Fragment {
             loading_dialog.dismiss();
             JSONArray jsonArray = new JSONArray(response);
 
+            // when activity got resume from itemAddActivity page, we need to clear itemInfo first
+            itemInfo.clear();
+
             for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject jsonObject = jsonArray.getJSONObject(i);
                 String information = jsonObject.getString("information");
