@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,9 +22,14 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.Volley;
 import com.example.mkseo.myapplication.Boss.Fragments.itemListFragmentPage.itemAddPage.itemAddActivity;
+import com.example.mkseo.myapplication.Boss.bossMainActivity;
 import com.example.mkseo.myapplication.Boss.itemInfoForBoss;
+import com.example.mkseo.myapplication.LoginPage.loginActivity;
 import com.example.mkseo.myapplication.R;
+import com.example.mkseo.myapplication.User.userMainActivity;
 import com.example.mkseo.myapplication.loading_dialog;
+import com.example.mkseo.myapplication.orderListViewAdapter;
+import com.google.firebase.iid.FirebaseInstanceId;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -43,14 +49,20 @@ public class itemListFragment extends Fragment {
     private static String url = "http://leafrog.iptime.org:20080/v1/product/list";
     public ArrayList<itemInfoForBoss> itemInfo = new ArrayList<>();
     private Dialog dialog;
+    private ListView listView;
+    private loading_dialog loading_dialog;
+    private String TAG = getClass().getSimpleName();
+    private String ID;
+
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
 
+    private static final String ARG_PARAM2 = "param2";
     // TODO: Rename and change types of parameters
     private String mParam1;
+
     private String mParam2;
 
     private OnFragmentInteractionListener mListener;
@@ -87,9 +99,6 @@ public class itemListFragment extends Fragment {
         }
     }
 
-    ListView listView;
-    private loading_dialog loading_dialog;
-
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -97,7 +106,7 @@ public class itemListFragment extends Fragment {
 
         // init loading_dialog
         loading_dialog = new loading_dialog(getActivity());
-        loading_dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        loading_dialog.setup();
 
         // get View first from inflater
         View view = inflater.inflate(R.layout.fragment_boss_item_list, container, false);
@@ -106,17 +115,24 @@ public class itemListFragment extends Fragment {
         Button registerItemButton = (Button) view.findViewById(R.id.addProductButtonTag);
         listView = (ListView) view.findViewById(R.id.itemListViewOnItemListFragmentTag);
 
+        // bring ID into local var
+        SharedPreferences preferences = getActivity().getApplicationContext().getSharedPreferences("IDPASSWORD", getActivity().getApplicationContext().MODE_PRIVATE);
+        ID = preferences.getString("id", null);
+
+        // listview itemClickListener
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                System.out.println("itemID : " + itemInfo.get(position).getProduct_id());
+                Log.d(TAG, "itemID - " + itemInfo.get(position).getProduct_id());
             }
         });
 
 
+        // registerButton clickListener
         registerItemButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //currently move to itemAddActivity
                 Intent intent = new Intent(getActivity(), itemAddActivity.class);
                 startActivity(intent);
             }
@@ -137,77 +153,118 @@ public class itemListFragment extends Fragment {
 
     }
 
-    public void requestToServer() {
-        final itemListViewAdapter itemListViewAdapter = new itemListViewAdapter(getActivity(), itemInfo);
-        listView.setAdapter(itemListViewAdapter);
-        itemInfo.clear();
-
-        //region response
-        Response.Listener<String> responseListener = new Response.Listener<String>() {
+    // good response
+    protected Response.Listener<String> getResponseListener() {
+        Response.Listener responseListener = new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
                 try {
-                    loading_dialog.dismiss();
-                    JSONArray jsonArray = new JSONArray(response);
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        JSONObject jsonObject = jsonArray.getJSONObject(i);
-                        String information = jsonObject.getString("information");
-                        String name = jsonObject.getString("name");
-                        String price = jsonObject.getString("price");
-                        String item_ID = jsonObject.getString("product_id");
-                        itemInfo.add(new itemInfoForBoss(information, name, price, item_ID));
-                    }
-
-                    itemListViewAdapter.refreshAdapter();
-
+                    reactor(response);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         };
-        //endregion
-        //region errorResponse
+
+        return responseListener;
+    }
+    protected void reactor(String response) {
+        try {
+            loading_dialog.dismiss();
+            JSONArray jsonArray = new JSONArray(response);
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject jsonObject = jsonArray.getJSONObject(i);
+                String information = jsonObject.getString("information");
+                String name = jsonObject.getString("name");
+                String price = jsonObject.getString("price");
+                String item_ID = jsonObject.getString("product_id");
+                itemInfo.add(new itemInfoForBoss(information, name, price, item_ID));
+            }
+
+            refreshListview();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // error response
+    protected Response.ErrorListener getErrorListener() {
         Response.ErrorListener errorListener = new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                int statusCode = error.networkResponse.statusCode;
-                String errorMessage;
-                loading_dialog.dismiss();
-
-                switch (statusCode) {
-                    case 400:
-                        errorMessage = "업체 ID가 잘못되었습니다";
-                        break;
-                    case 401:
-                        // 401 : limit, page 가 숫자가 아닌 경우
-                        errorMessage = "limit, page가 숫자가 아닌 경우";
-                        break;
-                    case 410:
-                        errorMessage = "Query got wrong, sorry!";
-                        break;
-                    default:
-                        errorMessage = "unknown error";
-                        break;
+                try {
+                    errorReactor(error);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-                AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-                dialog = builder.setMessage(errorMessage)
-                        .setNegativeButton("ok", null)
-                        .create();
-                dialog.show();
-
-                System.out.println("error occurred : " + error.getMessage());
-                System.out.println("error status code : " + statusCode);
             }
         };
-        //endregion
 
-        SharedPreferences preferences = getActivity().getApplicationContext().getSharedPreferences("IDPASSWORD", getActivity().getApplicationContext().MODE_PRIVATE);
-        String id = preferences.getString("id", null);
+        return errorListener;
+    }
+    protected void errorReactor(VolleyError error) {
 
-        String getMessage = new StringBuilder().append(url).append("?id=").append(id).toString();
-        System.out.println("getMessage: " + getMessage);
+        // make loading_dialog gone
+        loading_dialog.dismiss();
 
-        itemListFragmentRequest itemListFragmentRequest = new itemListFragmentRequest(getMessage, responseListener, errorListener);
+        // error string logging
+        Log.d(TAG, error.toString());
+
+        int statusCode;
+        if (error.networkResponse != null) {
+            // 401 error code is unreadable so be aware of that
+            // for now we are using this null networkResponse as 401 error code
+            statusCode = error.networkResponse.statusCode;
+        } else {
+            statusCode = 401;
+        }
+
+        String errorMessage;
+
+        switch (statusCode) {
+            case 400:
+                errorMessage = "업체 아이디가 잘못되었습니";
+                break;
+            case 401:
+                errorMessage = "limit이나 page가 숫자가 아닙니다";
+                break;
+            case 410:
+                errorMessage = "쿼리 에러가 발생하였습니다";
+                break;
+            default:
+                errorMessage = "알수없는 에러가 발생하였습니다";
+                break;
+        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        dialog = builder.setMessage(errorMessage)
+                .setNegativeButton("확인", null)
+                .create();
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.show();
+
+        Log.d(TAG, "error occurred(" + statusCode + ") - " + error.getMessage());
+    }
+
+    protected void refreshListview() {
+        Log.d(TAG, "refreshing listview...");
+
+        itemListViewAdapter itemListViewAdapter = new itemListViewAdapter(getActivity(), itemInfo);
+        listView.setAdapter(itemListViewAdapter);
+        itemListViewAdapter.notifyDataSetChanged();
+    }
+
+    public void requestToServer() {
+        //formal refresh source code -> will delete soon
+//        final itemListViewAdapter itemListViewAdapter = new itemListViewAdapter(getActivity(), itemInfo);
+//        listView.setAdapter(itemListViewAdapter);
+//        itemInfo.clear();
+
+        String getMessage = new StringBuilder().append(url).append("?id=").append(ID).toString();
+        Log.d(TAG, "get_message - " + getMessage);
+
+        itemListFragmentRequest itemListFragmentRequest = new itemListFragmentRequest(getMessage, getResponseListener(), getErrorListener());
         RequestQueue queue = Volley.newRequestQueue(getActivity());
         queue.add(itemListFragmentRequest);
     }

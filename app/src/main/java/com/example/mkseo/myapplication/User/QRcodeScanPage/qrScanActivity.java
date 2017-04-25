@@ -118,8 +118,16 @@ public class qrScanActivity extends Activity implements DecoratedBarcodeView.Tor
 
         loading_dialog.dismiss();
 
-        int statusCode = error.networkResponse.statusCode;
+        int statusCode;
+        if (error.networkResponse != null) {
+            // 401 error code is unreadable so be aware of that
+            statusCode = error.networkResponse.statusCode;
+        } else {
+            // 000 - can't connect with server
+            statusCode = 100;
+        }
         // error code 401 is unreadable. be aware of it.
+
         String errorMessage;
 
         Log.d(TAG, statusCode + " " + error.getMessage());

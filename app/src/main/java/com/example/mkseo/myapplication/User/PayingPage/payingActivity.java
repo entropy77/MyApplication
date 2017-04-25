@@ -197,22 +197,27 @@ public class payingActivity extends AppCompatActivity {
 //                if there is no items in items, don't do this'
                 if (items.size() != 0) {
                     loading_dialog.show();
+                    // get the table no from last ordering item
                     table_no = String.valueOf(items.get(items.size() - 1).getTable_no());
 
                     // need to request paying related action from Server
-                    for (itemInfoForUser item : items) {
+                    // this is for debugging
+                    for (itemInfoForUser item : items)
                         Log.d(TAG, item.getName() + " - " + item.getCount());
-                    }
 
                     JSONObject jsonObject = makeJsonTable();
+
+                    // this request curretlly using okhttp
+                    // since volley doesn't work for no reason...
                     requestToServer(jsonObject);
+
                 } else {
 
                     String errorMessage = "결제할 메뉴가 없습니다. 먼저 메뉴를 선택해 주세요";
 
                     AlertDialog.Builder builder = new AlertDialog.Builder(payingActivity.this);
                     dialog = builder.setMessage(errorMessage)
-                            .setNegativeButton("ok", new DialogInterface.OnClickListener() {
+                            .setNegativeButton("확인", new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
                                     returnIntent();
@@ -231,7 +236,8 @@ public class payingActivity extends AppCompatActivity {
         Intent intent = getIntent();
         items = (ArrayList<itemInfoForUser>) intent.getSerializableExtra("selectedItemArrayFromqrScanActivity");
 
-        System.out.println("table_no on PayingActivity : " + table_no);
+        // printout table_no
+        Log.d(TAG, "table_no - " + table_no);
 
         // sum total price
         totalPriceCalculating totalPriceCalculating = new totalPriceCalculating(items);
