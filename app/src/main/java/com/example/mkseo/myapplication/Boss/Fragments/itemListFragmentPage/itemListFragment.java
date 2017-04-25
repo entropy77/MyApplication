@@ -149,8 +149,6 @@ public class itemListFragment extends Fragment {
         // refresh
         requestToServer();
 
-        System.out.println("itemListFragment is back on!");
-
     }
 
     // good response
@@ -250,6 +248,7 @@ public class itemListFragment extends Fragment {
     protected void refreshListview() {
         Log.d(TAG, "refreshing listview...");
 
+//        itemInfo.clear();
         itemListViewAdapter itemListViewAdapter = new itemListViewAdapter(getActivity(), itemInfo);
         listView.setAdapter(itemListViewAdapter);
         itemListViewAdapter.notifyDataSetChanged();
