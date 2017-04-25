@@ -90,7 +90,7 @@ public class boss_order_fragment extends Fragment {
     private String login_id;
     private String password;
 
-    ArrayList<HashMap<String, String>> informations;
+    private ArrayList<HashMap<String, String>> informations;
     // informations is like this below
     // table_no(1) :
     // id(1) :
@@ -102,7 +102,7 @@ public class boss_order_fragment extends Fragment {
     //  .
     //  .
 
-    ArrayList<ArrayList<HashMap<String, String>>> items;
+    private ArrayList<ArrayList<HashMap<String, String>>> items;
     // items is like this below
     // name(1) :
     // count(1) :
@@ -112,7 +112,7 @@ public class boss_order_fragment extends Fragment {
     //  .
     //  .
 
-    ListView listView;
+    private ListView listView;
     private loading_dialog loading_dialog;
     private AlertDialog dialog;
 
@@ -179,7 +179,7 @@ public class boss_order_fragment extends Fragment {
             statusCode = error.networkResponse.statusCode;
         } else {
             // 000 - can't connect with server
-            statusCode = 100;
+            statusCode = 401;
         }
 
         String errorMessage;
@@ -189,10 +189,22 @@ public class boss_order_fragment extends Fragment {
                 errorMessage = "서버와 연결할 수 없습니다. 와이파이나 데이터를 켜시고 다시 시도해 주세요";
                 break;
             case 400:
-                errorMessage = "빈칸없이 작성해주시기 바랍니다";
+                errorMessage = "필요한 인자가 불충족되었습니다";
+                break;
+            case 401:
+                errorMessage = "테이블 번호가 숫자가 아닙니다(nullable)";
+                break;
+            case 402:
+                errorMessage = "주문 상태가 숫자가 아닙니다(nullable)";
+                break;
+            case 403:
+                errorMessage = "page나 limit이 숫자가 아닙니다";
                 break;
             case 404:
-                errorMessage = "아이디나 비밀번호가 일치하지 않습니다";
+                errorMessage = "회사 계정이 존재하지 않습니다(nullable)";
+                break;
+            case 405:
+                errorMessage = "사용자 게정이 존재하지 않습니다(nullable)";
                 break;
             case 410:
                 errorMessage = "쿼리 에러가 발생하였습니다";
@@ -228,7 +240,6 @@ public class boss_order_fragment extends Fragment {
     }
     protected void reactor(String response, String order_id) {
         try {
-            loading_dialog.dismiss();
             // get raw jsonMessage
             JSONObject jsonMessage = new JSONObject(response);
 
@@ -269,20 +280,26 @@ public class boss_order_fragment extends Fragment {
             statusCode = error.networkResponse.statusCode;
         } else {
             // 000 - can't connect with server
-            statusCode = 100;
+            statusCode = 401;
         }
+
+//        400 : required 인자가 불충족됨
+//        401 : status가 숫자가 아닌 경우 (입력했을 때 에러 체크를 함)
+//        404 : 회사 계정이 존재하지 않음
+//        410 : 쿼리 실행 중 에러
+//        200 : ok
 
         String errorMessage;
 
         switch (statusCode) {
-            case 100:
-                errorMessage = "서버와 연결할 수 없습니다. 와이파이나 데이터를 켜시고 다시 시도해 주세요";
-                break;
             case 400:
-                errorMessage = "빈칸없이 작성해주시기 바랍니다";
+                errorMessage = "필요한 인자가 불충족되었습니다";
+                break;
+            case 401:
+                errorMessage = "주문 상태가 숫자가 아닙니다(nullable)";
                 break;
             case 404:
-                errorMessage = "아이디나 비밀번호가 일치하지 않습니다";
+                errorMessage = "회사 계정이 존재하지 않습니다";
                 break;
             case 410:
                 errorMessage = "쿼리 에러가 발생하였습니다";
@@ -374,9 +391,6 @@ public class boss_order_fragment extends Fragment {
 
     // it include server connection
     public void refreshRequest(String login_id, String password) {
-
-        loading_dialog.show();
-
         // request to server about data
         boss_order_request boss_order_request = new boss_order_request(login_id, password, getResponseListener(), getErrorListener());
         RequestQueue queue = Volley.newRequestQueue(getActivity());
@@ -386,10 +400,6 @@ public class boss_order_fragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-
-        // loading_dialog setting
-        loading_dialog = new loading_dialog(getActivity());
-        loading_dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_boss_order_list, container, false);
@@ -412,21 +422,18 @@ public class boss_order_fragment extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-                loading_dialog.show();
-
 
                 String order_id = informations.get(position).get("id");
                 String status = informations.get(position).get("status");
 
                 Log.d(TAG, "order completing..");
-                Log.d(TAG, order_id);
+                Log.d(TAG, "order_id - " + order_id);
                 Log.d(TAG, "status - " + status);
 
                 // 2 implies order complete
                 String requestStatus = "2";
 
                 // status change request
-//                requestToServer(login_id, password, order_id, requestStatus);
                 changeStatusRequest(login_id, password, order_id, requestStatus);
             }
         });
@@ -446,6 +453,8 @@ public class boss_order_fragment extends Fragment {
     }
 
     private void changeStatusRequest(final String login_id, final String password, String order_id, String requestStatus) {
+
+        loading_dialog.show();
 
         boss_order_status_change_request boss_order_status_change_request = new boss_order_status_change_request(login_id, password, order_id, requestStatus, getResponseListener(order_id), getErrorListener(order_id));
         RequestQueue queue = Volley.newRequestQueue(getActivity());
