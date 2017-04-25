@@ -1,9 +1,12 @@
 package com.example.mkseo.myapplication.LoginPage.splashPage;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.Dialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Handler;
@@ -18,8 +21,11 @@ import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.Volley;
+import com.example.mkseo.myapplication.Boss.bossMainActivity;
 import com.example.mkseo.myapplication.LoginPage.loginActivity;
+import com.example.mkseo.myapplication.LoginPage.loginRequest;
 import com.example.mkseo.myapplication.R;
+import com.example.mkseo.myapplication.User.userMainActivity;
 import com.example.mkseo.myapplication.loading_dialog;
 
 import org.json.JSONObject;
@@ -34,6 +40,9 @@ public class splashActivity extends AppCompatActivity {
     private loading_dialog loading_dialog;
     private Dialog dialog;
 
+    boolean prevLogin = false;
+
+    // ping test request(splashRequest)
     // good response
     protected Response.Listener<String> getResponseListener() {
         Response.Listener responseListener = new Response.Listener<String>() {
@@ -62,13 +71,39 @@ public class splashActivity extends AppCompatActivity {
                 // server connection has done -> dialog message dismiss
                 loading_dialog.dismiss();
 
+                // check if this cellphone already login for this app
+                SharedPreferences preferences = getApplicationContext().getSharedPreferences("IDPASSWORD", getApplicationContext().MODE_PRIVATE);
+
+                String login_id = (preferences.getString("login_id", null) != null) ? preferences.getString("login_id", null) : null;
+                String password = (preferences.getString("password", null) != null) ? preferences.getString("password", null) : null;
+                String type = (preferences.getString("type", null) != null) ? preferences.getString("type", null) : null;
+
+                if (login_id != null && password != null && type != null) {
+                    prevLogin = true;
+
+                    Log.d(TAG, "SharedPreferences -> already has login experience");
+                    Log.d(TAG, "login_id - " + login_id);
+                    Log.d(TAG, "password - " + password);
+                    Log.d(TAG, "type - " + type);
+                }
+
                 // if request had been proved
                 // go to login activity
                 // we do ask camera permission request
-                if (checkCameraPermission())
-                    goToLoginActivity();
-                else {
+                if (checkCameraPermission()) {
 
+                    if (prevLogin) {
+
+                        loginRequest loginRequest = new loginRequest(login_id, password, getResponseListener(login_id, password), getErrorListener(login_id, password));
+                        RequestQueue queue = Volley.newRequestQueue(splashActivity.this);
+                        queue.add(loginRequest);
+
+                    } else {
+                        moveActivity(splashActivity.this, loginActivity.class);
+                    }
+
+
+                } else {
                     AlertDialog.Builder builder = new AlertDialog.Builder(splashActivity.this);
                     dialog = builder.setMessage("QR코드로 주문하기 위해 카메라 권한을 요청합니다! :D")
                             .setNegativeButton("확인", new DialogInterface.OnClickListener() {
@@ -130,6 +165,115 @@ public class splashActivity extends AppCompatActivity {
 
     }
 
+    // login request(loginRequest)
+    // good response
+    protected Response.Listener<String> getResponseListener(final String login_id, final String password) {
+        Response.Listener responseListener = new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                try {
+                    Log.d(TAG, "connection check - success");
+                    reactor(response, login_id, password);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        return responseListener;
+    }
+    protected void reactor(String response, String login_id, String password) {
+        try {
+            JSONObject jsonResponse = new JSONObject(response);
+            String type = jsonResponse.getString("type");
+
+            // server connection has done -> dialog message dismiss
+            loading_dialog.dismiss();
+
+            switch(Integer.parseInt(type)) {
+                case 0:
+                    System.out.println("this ID is user -> userMainActivity");
+                    moveActivity(splashActivity.this, userMainActivity.class);
+                    break;
+                case 1:
+                    System.out.println("this ID is boss -> bossMainActivity");
+                    moveActivity(splashActivity.this, bossMainActivity.class);
+                    break;
+                case 2:
+                    System.out.println("this ID is admin -> userMainActivity(temporally)");
+                    moveActivity(splashActivity.this, userMainActivity.class);
+                    break;
+                default:
+                    System.out.println("something is wrong, type isn't 0, 1 or 2 -> userMainActivity(temporally)");
+                    moveActivity(splashActivity.this, userMainActivity.class);
+                    break;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // error response
+    protected Response.ErrorListener getErrorListener(final String login_id, final String password) {
+        Response.ErrorListener errorListener = new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                try {
+                    Log.d(TAG, "connection check - fail");
+                    errorReactor(error, login_id, password);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        return errorListener;
+    }
+    protected void errorReactor(VolleyError error, String login_id, String password) {
+
+        // make loading_dialog gone
+        loading_dialog.dismiss();
+
+        // error string logging
+        Log.d(TAG, error.toString());
+
+        int statusCode;
+        if (error.networkResponse != null) {
+            // 401 error code is unreadable so be aware of that
+            statusCode = error.networkResponse.statusCode;
+        } else {
+            // 000 - can't connect with server
+            statusCode = 100;
+        }
+
+        String errorMessage;
+
+        switch (statusCode) {
+            case 100:
+                errorMessage = "서버와 연결할 수 없습니다. 와이파이나 데이터를 켜시고 다시 시도해 주세요";
+                break;
+            case 400:
+                errorMessage = "빈칸없이 작성해주시기 바랍니다";
+                break;
+            case 404:
+                errorMessage = "아이디나 비밀번호가 일치하지 않습니다";
+                break;
+            case 410:
+                errorMessage = "쿼리 에러가 발생하였습니다";
+                break;
+            default:
+                errorMessage = "알수없는 에러가 발생하였습니다";
+                break;
+        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(splashActivity.this);
+        dialog = builder.setMessage(errorMessage)
+                .setNegativeButton("확인", null)
+                .create();
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.show();
+    }
+
     // request cameraPermission
     protected boolean checkCameraPermission() {
         int APIVersion = android.os.Build.VERSION.SDK_INT;
@@ -168,6 +312,7 @@ public class splashActivity extends AppCompatActivity {
                     boolean cameraAccepted = (grantReults[0] == PackageManager.PERMISSION_GRANTED);
                     if (cameraAccepted) {
                         Log.i(this.getClass().getSimpleName(), "camera permission granted");
+                        requestLogin();
                     } else {
                         Log.i(this.getClass().getSimpleName(), "camera permission not granted");
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -181,7 +326,7 @@ public class splashActivity extends AppCompatActivity {
                                             @Override
                                             public void onClick(DialogInterface dialog, int which) {
                                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                                                    goToLoginActivity();
+                                                    moveActivity(splashActivity.this, loginActivity.class);
                                                 }
                                             }
                                         })
@@ -201,10 +346,16 @@ public class splashActivity extends AppCompatActivity {
     }
 
     // login activity intent
-    private void goToLoginActivity() {
-        Intent intent = new Intent(splashActivity.this, loginActivity.class);
+    private void moveActivity(Context oldActivity, Class<?> newActivity) {
+        Intent intent = new Intent(oldActivity, newActivity);
         startActivity(intent);
         finish();
+    }
+
+    private void requestLogin(String login_id, String password) {
+        loginRequest loginRequest = new loginRequest(login_id, password, getResponseListener(login_id, password), getErrorListener(login_id, password));
+        RequestQueue queue = Volley.newRequestQueue(splashActivity.this);
+        queue.add(loginRequest);
     }
 
     @Override

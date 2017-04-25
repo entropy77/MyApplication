@@ -132,6 +132,7 @@ public class boss_order_fragment extends Fragment {
 
         return responseListener;
     }
+
     protected void reactor(String response) {
         try {
             loading_dialog.dismiss();
@@ -165,6 +166,7 @@ public class boss_order_fragment extends Fragment {
 
         return errorListener;
     }
+
     protected void errorReactor(VolleyError error) {
 
         // make loading_dialog gone
@@ -238,6 +240,7 @@ public class boss_order_fragment extends Fragment {
 
         return responseListener;
     }
+
     protected void reactor(String response, String order_id) {
         try {
             // get raw jsonMessage
@@ -266,6 +269,7 @@ public class boss_order_fragment extends Fragment {
 
         return errorListener;
     }
+
     protected void errorReactor(VolleyError error, String order_id) {
 
         // make loading_dialog gone

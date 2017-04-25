@@ -36,6 +36,7 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
         // right now, phoneNumberFormat would be 11 digit
         int phoneNumberFormat = 11;
         String phoneNumberFromPushNotification = "";
+
         if (remoteMessage.getNotification() != null) {
             String MessageNotificationBody = remoteMessage.getNotification().getBody();
             String tempString = MessageNotificationBody.replaceAll("[^-?0-9]+", "");
