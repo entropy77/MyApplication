@@ -1,7 +1,6 @@
 package com.example.mkseo.myapplication.LoginPage.splashPage;
 
 import android.Manifest;
-import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -40,6 +39,10 @@ public class splashActivity extends AppCompatActivity {
     private loading_dialog loading_dialog;
     private Dialog dialog;
 
+    private String login_id;
+    private String password;
+    private String type;
+
     boolean prevLogin = false;
 
     // ping test request(splashRequest)
@@ -59,6 +62,7 @@ public class splashActivity extends AppCompatActivity {
 
         return responseListener;
     }
+
     protected void reactor(String response) {
         try {
             JSONObject jsonResponse = new JSONObject(response);
@@ -74,9 +78,9 @@ public class splashActivity extends AppCompatActivity {
                 // check if this cellphone already login for this app
                 SharedPreferences preferences = getApplicationContext().getSharedPreferences("IDPASSWORD", getApplicationContext().MODE_PRIVATE);
 
-                String login_id = (preferences.getString("login_id", null) != null) ? preferences.getString("login_id", null) : null;
-                String password = (preferences.getString("password", null) != null) ? preferences.getString("password", null) : null;
-                String type = (preferences.getString("type", null) != null) ? preferences.getString("type", null) : null;
+                login_id = (preferences.getString("login_id", null) != null) ? preferences.getString("login_id", null) : null;
+                password = (preferences.getString("password", null) != null) ? preferences.getString("password", null) : null;
+                type = (preferences.getString("type", null) != null) ? preferences.getString("type", null) : null;
 
                 if (login_id != null && password != null && type != null) {
                     prevLogin = true;
@@ -90,14 +94,11 @@ public class splashActivity extends AppCompatActivity {
                 // if request had been proved
                 // go to login activity
                 // we do ask camera permission request
-                if (checkCameraPermission()) {
+                if (checkAPIVersion()) {
 
                     if (prevLogin) {
-
-                        loginRequest loginRequest = new loginRequest(login_id, password, getResponseListener(login_id, password), getErrorListener(login_id, password));
-                        RequestQueue queue = Volley.newRequestQueue(splashActivity.this);
-                        queue.add(loginRequest);
-
+                        // this request include move to main page(intent)
+                        requestLogin(login_id, password);
                     } else {
                         moveActivity(splashActivity.this, loginActivity.class);
                     }
@@ -146,6 +147,7 @@ public class splashActivity extends AppCompatActivity {
 
         return errorListener;
     }
+
     protected void errorReactor(VolleyError error) {
         System.out.println("error occured : " + error);
 
@@ -173,6 +175,7 @@ public class splashActivity extends AppCompatActivity {
             public void onResponse(String response) {
                 try {
                     Log.d(TAG, "connection check - success");
+                    loading_dialog.dismiss();
                     reactor(response, login_id, password);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -182,15 +185,13 @@ public class splashActivity extends AppCompatActivity {
 
         return responseListener;
     }
+
     protected void reactor(String response, String login_id, String password) {
         try {
             JSONObject jsonResponse = new JSONObject(response);
             String type = jsonResponse.getString("type");
 
-            // server connection has done -> dialog message dismiss
-            loading_dialog.dismiss();
-
-            switch(Integer.parseInt(type)) {
+            switch (Integer.parseInt(type)) {
                 case 0:
                     System.out.println("this ID is user -> userMainActivity");
                     moveActivity(splashActivity.this, userMainActivity.class);
@@ -221,6 +222,7 @@ public class splashActivity extends AppCompatActivity {
             public void onErrorResponse(VolleyError error) {
                 try {
                     Log.d(TAG, "connection check - fail");
+                    loading_dialog.dismiss();
                     errorReactor(error, login_id, password);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -230,10 +232,8 @@ public class splashActivity extends AppCompatActivity {
 
         return errorListener;
     }
-    protected void errorReactor(VolleyError error, String login_id, String password) {
 
-        // make loading_dialog gone
-        loading_dialog.dismiss();
+    protected void errorReactor(VolleyError error, String login_id, String password) {
 
         // error string logging
         Log.d(TAG, error.toString());
@@ -275,7 +275,7 @@ public class splashActivity extends AppCompatActivity {
     }
 
     // request cameraPermission
-    protected boolean checkCameraPermission() {
+    protected boolean checkAPIVersion() {
         int APIVersion = android.os.Build.VERSION.SDK_INT;
 
         boolean isCameraPermissionGranted = false;
@@ -298,6 +298,7 @@ public class splashActivity extends AppCompatActivity {
 
         return isCameraPermissionGranted;
     }
+
     private boolean checkCameraPermissionHasGranted() {
         int result = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA);
         return result == PackageManager.PERMISSION_GRANTED;
@@ -311,10 +312,13 @@ public class splashActivity extends AppCompatActivity {
                 if (grantReults.length > 0) {
                     boolean cameraAccepted = (grantReults[0] == PackageManager.PERMISSION_GRANTED);
                     if (cameraAccepted) {
-                        Log.i(this.getClass().getSimpleName(), "camera permission granted");
-                        requestLogin();
+                        Log.d(this.getClass().getSimpleName(), "camera permission granted");
+                        if (prevLogin)
+                            requestLogin(login_id, password);
+                        else
+                            moveActivity(splashActivity.this, loginActivity.class);
                     } else {
-                        Log.i(this.getClass().getSimpleName(), "camera permission not granted");
+                        Log.d(this.getClass().getSimpleName(), "camera permission not granted");
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                             if (shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)) {
                                 // enter the code if user deny for camera using permission
@@ -326,7 +330,10 @@ public class splashActivity extends AppCompatActivity {
                                             @Override
                                             public void onClick(DialogInterface dialog, int which) {
                                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                                                    moveActivity(splashActivity.this, loginActivity.class);
+                                                    if (prevLogin)
+                                                        requestLogin(login_id, password);
+                                                    else
+                                                        moveActivity(splashActivity.this, loginActivity.class);
                                                 }
                                             }
                                         })
@@ -353,6 +360,9 @@ public class splashActivity extends AppCompatActivity {
     }
 
     private void requestLogin(String login_id, String password) {
+
+        loading_dialog.show();
+
         loginRequest loginRequest = new loginRequest(login_id, password, getResponseListener(login_id, password), getErrorListener(login_id, password));
         RequestQueue queue = Volley.newRequestQueue(splashActivity.this);
         queue.add(loginRequest);
@@ -367,7 +377,7 @@ public class splashActivity extends AppCompatActivity {
         loading_dialog = new loading_dialog(splashActivity.this);
         loading_dialog.setup();
 
-        // delay splash activity for SPLASH_DSPLAY_LENGTH : 2 sec
+        // delay splash activity for SPLASH_DISPLAY_LENGTH : 2 sec
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
