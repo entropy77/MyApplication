@@ -31,18 +31,25 @@ import okhttp3.Request;
 
 public class userMainActivity extends AppCompatActivity {
 
+    // example for kill other activity
+    static userMainActivity userMainActivity;
+
+    private Button qrscanButton, mainButton, orderButton, consumeButton, searchButton, logoutButton;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_main);
 
+        userMainActivity = this;
+
         // init Buttons
-        final Button qrscanButton = (Button) findViewById(R.id.qrScanButton);
-        final Button mainButton = (Button) findViewById(R.id.mainButton);
-        final Button orderButton = (Button) findViewById(R.id.orderButton);
-        final Button consumeButton = (Button) findViewById(R.id.consumeButton);
-        final Button searchButton = (Button) findViewById(R.id.searchButton);
-        final Button logoutButton = (Button) findViewById(R.id.logoutButtonOnUserMainActivity);
+        qrscanButton = (Button) findViewById(R.id.qrScanButton);
+        mainButton = (Button) findViewById(R.id.mainButton);
+        orderButton = (Button) findViewById(R.id.orderButton);
+        consumeButton = (Button) findViewById(R.id.consumeButton);
+        searchButton = (Button) findViewById(R.id.searchButton);
+        logoutButton = (Button) findViewById(R.id.logoutButtonOnUserMainActivity);
 
         final TextView informationTextview = (TextView) findViewById(R.id.informationTextOnUserMainActivity);
 
@@ -102,12 +109,17 @@ public class userMainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 // change selected button background color
-                mainButton.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
-                orderButton.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
-                consumeButton.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
-                searchButton.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
+//                mainButton.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
+//                orderButton.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
+//                consumeButton.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
+//                searchButton.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
+//
+//                openFragment(new user_order_fragment());
 
-                openFragment(new user_order_fragment());
+
+
+                orderListButtonClickEvent();
+
             }
         });
 
@@ -141,6 +153,19 @@ public class userMainActivity extends AppCompatActivity {
 
     }
 
+    public void orderListButtonClickEvent() {
+        mainButton.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
+        orderButton.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
+        consumeButton.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
+        searchButton.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
+
+        openFragment(new user_order_fragment());
+    }
+
+    public static userMainActivity getInstance() {
+        return userMainActivity;
+    }
+
     private void openFragment(Fragment newFragment) {
         Fragment containerFragment = getSupportFragmentManager().findFragmentById(R.id.userFragment);
         if (containerFragment.getChildFragmentManager().equals(newFragment)) {
@@ -150,7 +175,7 @@ public class userMainActivity extends AppCompatActivity {
             FragmentManager fragmentManager = getSupportFragmentManager();
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
             fragmentTransaction.replace(R.id.userFragment, newFragment);
-            fragmentTransaction.commit();
+            fragmentTransaction.commitAllowingStateLoss();
         }
     }
 

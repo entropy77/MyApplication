@@ -13,12 +13,15 @@ import com.example.mkseo.myapplication.User.PayingPage.payingActivity;
 import com.example.mkseo.myapplication.User.QRcodeScanPage.qrScanActivity;
 import com.example.mkseo.myapplication.R;
 import com.example.mkseo.myapplication.User.itemInfoForUser;
+import com.example.mkseo.myapplication.User.userMainActivity;
 
 import java.util.ArrayList;
 
 public class payingCompleteActivity extends AppCompatActivity {
 
     private String id;
+
+    public static payingCompleteActivity payingCompleteActivity;
 
     // good response
     protected Response.Listener<String> getResponseListener() {
@@ -67,6 +70,8 @@ public class payingCompleteActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
+        payingCompleteActivity = this;
+
         ArrayList<itemInfoForUser> infos;
 
         super.onCreate(savedInstanceState);
@@ -85,6 +90,7 @@ public class payingCompleteActivity extends AppCompatActivity {
         quitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                userMainActivity.getInstance().orderListButtonClickEvent();
                 finish();
             }
         });

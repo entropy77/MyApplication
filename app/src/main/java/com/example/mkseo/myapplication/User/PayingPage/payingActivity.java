@@ -305,7 +305,6 @@ public class payingActivity extends AppCompatActivity {
         }
         return null;
     }
-
     // very important method(2017. 03. 10)
     public void setTotalPriceonTextView(String totalPrice) {
         this.totalPrice.setText(totalPrice);

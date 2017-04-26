@@ -77,9 +77,9 @@ public class user_order_fragment extends Fragment {
         }
     }
 
-    String TAG = this.getClass().getSimpleName();
+    private String TAG = this.getClass().getSimpleName();
 
-    ArrayList<HashMap<String, String>> informations;
+    private ArrayList<HashMap<String, String>> informations;
     // informations is like this below
     // table_no(1) :
     // id(1) :
@@ -91,7 +91,7 @@ public class user_order_fragment extends Fragment {
     //  .
     //  .
 
-    ArrayList<ArrayList<HashMap<String, String>>> items;
+    private ArrayList<ArrayList<HashMap<String, String>>> items;
     // items is like this below
     // name(1) :
     // count(1) :
@@ -101,7 +101,7 @@ public class user_order_fragment extends Fragment {
     //  .
     //  .
 
-    ListView listView;
+    private ListView listView;
     private loading_dialog loading_dialog;
     private AlertDialog dialog;
 
@@ -256,6 +256,8 @@ public class user_order_fragment extends Fragment {
             e.printStackTrace();
         }
     }
+
+    // to refreshListview, use this method, not refreshRequest
     protected void refreshListview() {
         Log.d(TAG, "refreshing listview...");
 
