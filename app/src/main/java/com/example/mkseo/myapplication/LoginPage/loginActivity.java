@@ -28,10 +28,13 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 
 public class loginActivity extends AppCompatActivity {
 
@@ -167,7 +170,15 @@ public class loginActivity extends AppCompatActivity {
 
             // topic subscribe for push message
             token = FirebaseInstanceId.getInstance().getToken();
-            Log.e("token", token);
+            Log.d(TAG, token);
+
+//            Map<String, String> pushRegistration = new HashMap<>();
+//            pushRegistration.put("login_id", login_id);
+//            pushRegistration.put("password", password);
+//            pushRegistration.put("reg_id", token);
+
+            pushRegistRequest(login_id, password, token);
+
 
             // askGoogleaboutTopics based on token parameter
             // and the Topics will unsubscribe topics
@@ -261,6 +272,128 @@ public class loginActivity extends AppCompatActivity {
                 .create();
         dialog.setCanceledOnTouchOutside(false);
         dialog.show();
+    }
+
+    // good response
+    protected Response.Listener<String> getResponseListener(final String registration_id) {
+        Response.Listener responseListener = new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                try {
+                    reactor(response, registration_id);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        return responseListener;
+    }
+    protected void reactor(String response, String registration_id) {
+        try {
+            JSONObject jsonResponse = new JSONObject(response);
+
+            Log.d(TAG, "Regist succeeded");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // error response
+    protected Response.ErrorListener getErrorListener(final String registration_id) {
+        Response.ErrorListener errorListener = new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                try {
+                    errorReactor(error, registration_id);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        return errorListener;
+    }
+    protected void errorReactor(VolleyError error, String registration_id) {
+
+        // make loading_dialog gone
+        loading_dialog.dismiss();
+
+        // error string logging
+        Log.d(TAG, error.toString());
+
+        int statusCode;
+        if (error.networkResponse != null) {
+            // 401 error code is unreadable so be aware of that
+            statusCode = error.networkResponse.statusCode;
+        } else {
+            // 000 - can't connect with server
+            statusCode = 100;
+        }
+
+        String errorMessage;
+
+        switch (statusCode) {
+            case 100:
+                errorMessage = "서버와 연결할 수 없습니다. 와이파이나 데이터를 켜시고 다시 시도해 주세요";
+                break;
+            case 400:
+                errorMessage = "빈칸없이 작성해주시기 바랍니다";
+                break;
+            case 404:
+                errorMessage = "아이디나 비밀번호가 일치하지 않습니다";
+                break;
+            case 410:
+                errorMessage = "쿼리 에러가 발생하였습니다";
+                break;
+            default:
+                errorMessage = "알수없는 에러가 발생하였습니다";
+                break;
+        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(loginActivity.this);
+        dialog = builder.setMessage(errorMessage)
+                .setNegativeButton("확인", null)
+                .create();
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.show();
+    }
+
+
+    public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+    OkHttpClient client2 = new OkHttpClient();
+
+    String postRequest(String url, String json) throws IOException {
+
+        RequestBody body = RequestBody.create(JSON, json);
+        Request request = new Request.Builder()
+                .url(url)
+                .post(body)
+                .build();
+        okhttp3.Response response = client2.newCall(request).execute();
+
+        return response.body().string();
+    }
+
+    public void pushRegistRequest(String login_id, String password, String reg_id) {
+
+        Log.d(TAG, "pushRegistRequest starts");
+
+        registRequest registRequest = new registRequest(login_id, password, reg_id, getResponseListener(reg_id), getErrorListener(reg_id));
+        RequestQueue queue = Volley.newRequestQueue(loginActivity.this);
+        queue.add(registRequest);
+
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                try {
+//                    String response = postRequest("http://leafrog.iptime.org:20080/message/regist", orderJSONMessage.toString());
+//                    Log.d("response", response);
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }).start();
     }
 
     @Override

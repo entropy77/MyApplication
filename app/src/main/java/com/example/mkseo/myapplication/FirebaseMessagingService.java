@@ -29,6 +29,12 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
             Log.d(TAG, "Message data payload: " + remoteMessage.getData());
         }
 
+        if (remoteMessage.getNotification().getBody().length() > 0) {
+            Log.d(TAG, "Message Notification Body: " + remoteMessage.getNotification().getBody());
+            sendNotification(remoteMessage);
+            BusProvider.getInstance().post(new pushEvent());
+        }
+        /*
         // for phone number from push notification
         // trimming since message's original form is this
         // OO번 테이블에서 OOOOOOOOOOO님이 주문하였습니다
@@ -57,6 +63,7 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
             sendNotification(remoteMessage);
             BusProvider.getInstance().post(new pushEvent());
         }
+        */
 
     }
 

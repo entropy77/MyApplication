@@ -29,8 +29,14 @@ import com.squareup.otto.Subscribe;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -132,7 +138,6 @@ public class boss_order_fragment extends Fragment {
 
         return responseListener;
     }
-
     protected void reactor(String response) {
         try {
             loading_dialog.dismiss();
@@ -166,8 +171,113 @@ public class boss_order_fragment extends Fragment {
 
         return errorListener;
     }
-
     protected void errorReactor(VolleyError error) {
+
+        // make loading_dialog gone
+        loading_dialog.dismiss();
+
+        // error string logging
+        Log.d(TAG, error.toString());
+
+        int statusCode;
+        if (error.networkResponse != null) {
+            // 401 error code is unreadable so be aware of that
+            statusCode = error.networkResponse.statusCode;
+        } else {
+            // 000 - can't connect with server
+            statusCode = 401;
+        }
+
+        String errorMessage;
+
+        switch (statusCode) {
+            case 100:
+                errorMessage = "서버와 연결할 수 없습니다. 와이파이나 데이터를 켜시고 다시 시도해 주세요";
+                break;
+            case 400:
+                errorMessage = "필요한 인자가 불충족되었습니다";
+                break;
+            case 401:
+                errorMessage = "테이블 번호가 숫자가 아닙니다(nullable)";
+                break;
+            case 402:
+                errorMessage = "주문 상태가 숫자가 아닙니다(nullable)";
+                break;
+            case 403:
+                errorMessage = "page나 limit이 숫자가 아닙니다";
+                break;
+            case 404:
+                errorMessage = "회사 계정이 존재하지 않습니다(nullable)";
+                break;
+            case 405:
+                errorMessage = "사용자 게정이 존재하지 않습니다(nullable)";
+                break;
+            case 410:
+                errorMessage = "쿼리 에러가 발생하였습니다";
+                break;
+            default:
+                errorMessage = "알수없는 에러가 발생하였습니다";
+                break;
+        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        dialog = builder.setMessage(errorMessage)
+                .setNegativeButton("확인", null)
+                .create();
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.show();
+    }
+
+    // good response
+    protected Response.Listener<String> getResponseListener(final String message_title, final String message_body) {
+        Response.Listener responseListener = new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                try {
+                    reactor(response, message_title, message_body);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        return responseListener;
+    }
+    protected void reactor(String response, String message_title, String message_body) {
+        try {
+            loading_dialog.dismiss();
+            // get raw jsonMessage
+//            JSONArray jsonMessage = new JSONArray(response);
+
+            // convert JSON into LOCAL data
+            // which is informations and items
+//            put_JSONdata_into_local_data(jsonMessage);
+
+            Log.d(TAG, "Succeeded in pushing");
+
+            // refreshListview
+            refreshListview();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // error response
+    protected Response.ErrorListener getErrorListener(final String message_title, final String message_body) {
+        Response.ErrorListener errorListener = new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                try {
+                    errorReactor(error, message_title, message_body);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        return errorListener;
+    }
+    protected void errorReactor(VolleyError error, String message_title, String message_body) {
 
         // make loading_dialog gone
         loading_dialog.dismiss();
@@ -401,6 +511,47 @@ public class boss_order_fragment extends Fragment {
         queue.add(boss_order_request);
     }
 
+
+    public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+    OkHttpClient client = new OkHttpClient();
+
+    String postRequest(String url, String json) throws IOException {
+
+        RequestBody body = RequestBody.create(JSON, json);
+        Request request = new Request.Builder()
+                .url(url)
+                .post(body)
+                .build();
+        okhttp3.Response response = client.newCall(request).execute();
+
+        return response.body().string();
+    }
+
+    public void pushRequest(String account_id, String msg) {
+
+        Log.d(TAG, "pushRequest starts");
+
+        String testTitle = "testTitle";
+        String testBody = "testBody";
+
+        boss_order_push_request boss_order_push_request = new boss_order_push_request(account_id, msg, getResponseListener(testTitle, testBody), getErrorListener(testTitle, testBody));
+        RequestQueue queue = Volley.newRequestQueue(getActivity());
+        queue.add(boss_order_push_request);
+
+
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                try {
+//                    String response = postRequest("http://leafrog.iptime.org:20080/message/send_data", orderJSONMessage.toString());
+//                    Log.d(TAG, response);
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }).start();
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -429,16 +580,31 @@ public class boss_order_fragment extends Fragment {
 
                 String order_id = informations.get(position).get("id");
                 String status = informations.get(position).get("status");
+                String account_id = informations.get(position).get("account_id");
+                String company_id = informations.get(position).get("company_id");
 
                 Log.d(TAG, "order completing..");
                 Log.d(TAG, "order_id - " + order_id);
                 Log.d(TAG, "status - " + status);
+                Log.d(TAG, "account_id - " + account_id);
+                Log.d(TAG, "company_id - " + company_id);
 
                 // 2 implies order complete
                 String requestStatus = "2";
 
                 // status change request
                 changeStatusRequest(login_id, password, order_id, requestStatus);
+
+                HashMap<String, String> pushMessage = new HashMap<String, String>();
+                pushMessage.put("login_id", login_id);
+                pushMessage.put("password", password);
+                pushMessage.put("message_title", "testTitle");
+                pushMessage.put("message_body", "testBody");
+
+                JSONObject jsonObject = new JSONObject(pushMessage);
+
+                pushRequest(account_id, "test msg");
+                pushRequest(company_id, "test msg for company");
             }
         });
 
