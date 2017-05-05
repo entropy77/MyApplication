@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
@@ -19,7 +20,9 @@ import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.Volley;
+import com.example.mkseo.myapplication.Boss.bossMainActivity;
 import com.example.mkseo.myapplication.BusProvider;
+import com.example.mkseo.myapplication.PushWakeLock;
 import com.example.mkseo.myapplication.R;
 import com.example.mkseo.myapplication.orderListViewAdapter;
 import com.example.mkseo.myapplication.loading_dialog;
@@ -316,7 +319,7 @@ public class boss_order_fragment extends Fragment {
                 errorMessage = "회사 계정이 존재하지 않습니다(nullable)";
                 break;
             case 405:
-                errorMessage = "사용자 게정이 존재하지 않습니다(nullable)";
+                errorMessage = "사용자 계정이 존재하지 않습니다(nullable)";
                 break;
             case 410:
                 errorMessage = "쿼리 에러가 발생하였습니다";
@@ -604,7 +607,7 @@ public class boss_order_fragment extends Fragment {
                 JSONObject jsonObject = new JSONObject(pushMessage);
 
                 pushRequest(account_id, "test msg");
-                pushRequest(company_id, "test msg for company");
+//                pushRequest(company_id, "test msg for company");
             }
         });
 
@@ -673,6 +676,7 @@ public class boss_order_fragment extends Fragment {
         super.onAttach(context);
 
         // otto using related method - reigster
+        Log.d(TAG, "otto register succeeded");
         BusProvider.getInstance().register(this);
 //        if (context instanceof OnFragmentInteractionListener) {
 //            mListener = (OnFragmentInteractionListener) context;
@@ -703,7 +707,10 @@ public class boss_order_fragment extends Fragment {
             @Override
             public void run() {
                 // after got notification, we need to refresh Listview
-                refreshRequest(login_id, password);
+//                refreshRequest(login_id, password);
+
+                bossMainActivity.getInstance().orderListButtonClickEvent();
+
             }
         });
 

@@ -1,5 +1,6 @@
 package com.example.mkseo.myapplication.User.Fragments.userOrderFragmentPage;
 
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.toolbox.StringRequest;
@@ -28,6 +29,8 @@ public class user_order_request extends StringRequest {
         parameters.put("status", "0");
 
         System.out.println("orderListFragmentRequest : " + parameters.toString());
+
+        setRetryPolicy(new DefaultRetryPolicy(10000, 0, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
 
 
     }

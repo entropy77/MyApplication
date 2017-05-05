@@ -1,5 +1,6 @@
 package com.example.mkseo.myapplication.User.Fragments.userOrderFragmentPage;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
@@ -15,9 +16,12 @@ import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.Volley;
+import com.example.mkseo.myapplication.BusProvider;
 import com.example.mkseo.myapplication.loading_dialog;
 import com.example.mkseo.myapplication.orderListViewAdapter;
 import com.example.mkseo.myapplication.R;
+import com.example.mkseo.myapplication.pushEvent;
+import com.squareup.otto.Subscribe;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -278,6 +282,9 @@ public class user_order_fragment extends Fragment {
         queue.add(user_order_request);
     }
 
+    private String login_id;
+    private String password;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -293,8 +300,8 @@ public class user_order_fragment extends Fragment {
 
         // bring-out id and password from preferences
         SharedPreferences preferences = getActivity().getApplicationContext().getSharedPreferences("IDPASSWORD", getActivity().getApplicationContext().MODE_PRIVATE);
-        String login_id = preferences.getString("login_id", null);
-        String password = preferences.getString("password", null);
+        login_id = preferences.getString("login_id", null);
+        password = preferences.getString("password", null);
 
         // connect with server
         // it will automatically refresh listview
@@ -314,9 +321,44 @@ public class user_order_fragment extends Fragment {
     }
 
     @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+
+        // otto using related method - reigster
+        BusProvider.getInstance().register(this);
+//        if (context instanceof OnFragmentInteractionListener) {
+//            mListener = (OnFragmentInteractionListener) context;
+//        } else {
+//            throw new RuntimeException(context.toString()
+//                    + " must implement OnFragmentInteractionListener");
+//        }
+    }
+
+    @Override
     public void onDetach() {
         super.onDetach();
+
+        // otto using related method - unregister
+        BusProvider.getInstance().unregister(this);
+
         mListener = null;
+    }
+
+    // this is one of otto protocol. don't delete
+    @Subscribe
+    public void gotPushNotification(pushEvent event) {
+        // receive refreshed information from server again
+
+        Log.d(TAG, "It got an local push notification - otto");
+
+        this.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                // after got notification, we need to refresh Listview
+                refreshRequest(login_id, password);
+            }
+        });
+
     }
 
     /**

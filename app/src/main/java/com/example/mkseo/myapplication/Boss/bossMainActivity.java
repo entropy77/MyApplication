@@ -11,6 +11,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -19,6 +21,7 @@ import com.example.mkseo.myapplication.Boss.Fragments.itemListFragmentPage.itemL
 import com.example.mkseo.myapplication.Boss.Fragments.etcBossFragment;
 import com.example.mkseo.myapplication.LoginPage.loginActivity;
 import com.example.mkseo.myapplication.R;
+import com.example.mkseo.myapplication.User.Fragments.userOrderFragmentPage.user_order_fragment;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.messaging.FirebaseMessaging;
 
@@ -31,18 +34,23 @@ import okhttp3.Request;
 
 public class bossMainActivity extends AppCompatActivity {
 
+    static bossMainActivity bossMainActivity;
+    private Button orderListButton, productListButton, etcBossButton, logoutButton;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_boss_main);
-        
-        // init XML objects
-        final Button orderListButton = (Button)findViewById(R.id.orderListButtonTag);
-        final Button productListButton = (Button)findViewById(R.id.productListButtonTag);
-        final Button etcBossButton = (Button)findViewById(R.id.etcButtonInBossTag);
-        final Button logoutButton = (Button)findViewById(R.id.logoutButtonOnBossMainActivity);
 
-        final TextView informationTextview = (TextView)findViewById(R.id.informationTextOnBossMainActivity);
+        bossMainActivity = this;
+
+        // init XML objects
+        orderListButton = (Button) findViewById(R.id.orderListButtonTag);
+        productListButton = (Button) findViewById(R.id.productListButtonTag);
+        etcBossButton = (Button) findViewById(R.id.etcButtonInBossTag);
+        logoutButton = (Button) findViewById(R.id.logoutButtonOnBossMainActivity);
+
+        final TextView informationTextview = (TextView) findViewById(R.id.informationTextOnBossMainActivity);
 
         // change selected button background color
         orderListButton.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
@@ -109,6 +117,14 @@ public class bossMainActivity extends AppCompatActivity {
         });
 
 
+    }
+
+    public void orderListButtonClickEvent() {
+        orderListButton.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
+        productListButton.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
+        etcBossButton.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
+
+        switchFragment(new user_order_fragment());
     }
 
     public void switchFragment(Fragment fragment) {
@@ -184,5 +200,9 @@ public class bossMainActivity extends AppCompatActivity {
                 }
             }
         }).start();
+    }
+
+    public static bossMainActivity getInstance() {
+        return bossMainActivity;
     }
 }

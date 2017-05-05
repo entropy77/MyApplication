@@ -7,8 +7,10 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.RingtoneManager;
 import android.net.Uri;
+import android.os.PowerManager;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.view.WindowManager;
 
 import com.google.firebase.messaging.RemoteMessage;
 import com.squareup.otto.Produce;
@@ -25,15 +27,20 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
 
+//        PowerManager powerManager = (PowerManager)getSystemService(Context.POWER_SERVICE);
+//        PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, "TAG");
+//        wakeLock.acquire(3000);
+
         if (remoteMessage.getData().size() > 0) {
             Log.d(TAG, "Message data payload: " + remoteMessage.getData());
-        }
-
-        if (remoteMessage.getNotification().getBody().length() > 0) {
-            Log.d(TAG, "Message Notification Body: " + remoteMessage.getNotification().getBody());
             sendNotification(remoteMessage);
             BusProvider.getInstance().post(new pushEvent());
+
         }
+
+//        if (remoteMessage.getNotification().getBody().length() > 0) {
+//            Log.d(TAG, "Message Notification Body: " + remoteMessage.getNotification().getBody());
+//        }
         /*
         // for phone number from push notification
         // trimming since message's original form is this
@@ -89,9 +96,8 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
 
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
                 .setSmallIcon(R.mipmap.ic_launcher)
-                .setStyle(style)
+//                .setStyle(style)
                 .setContentTitle("알림이 도착했습니다")
-                .setContentText(messageBody.getNotification().getBody().toString())
                 .setAutoCancel(true)
                 .setSound(defaultSoundUri)
                 .setDefaults(NotificationCompat.DEFAULT_VIBRATE)
